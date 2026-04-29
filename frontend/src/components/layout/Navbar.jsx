@@ -82,112 +82,172 @@ const Navbar = () => {
     dispatch(clearError());
   };
 
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
   return (
     <>
-      <nav style={{ padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', position: 'sticky', top: 0, zIndex: 100 }} className="glass-panel">
-        <Link 
-          to="/"
-          style={{ textDecoration: 'none' }}
-        >
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent-red)' }}
-          >
-            ReduxCloud
-          </motion.div>
-        </Link>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-          <Link to="/" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '500', fontSize: '0.9rem' }}>Home</Link>
-          <a href="/#pricing" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '500', fontSize: '0.9rem' }}>Pricing</a>
+      <nav style={{ 
+        padding: '1rem 4rem', 
+        display: 'grid', 
+        gridTemplateColumns: '1fr auto 1fr', 
+        alignItems: 'center', 
+        borderBottom: '1px solid var(--border-color)', 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 100,
+        background: 'var(--bg-primary)'
+      }} className="glass-panel">
+        
+        {/* Left Section */}
+        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+          <Link to="/" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'var(--accent-red)'} onMouseLeave={e => e.target.style.color = 'var(--text-primary)'}>Home</Link>
+          <a href="/#pricing" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'var(--accent-red)'} onMouseLeave={e => e.target.style.color = 'var(--text-primary)'}>Pricing</a>
+        </div>
+
+        {/* Center Section: Logo */}
+        <div style={{ textAlign: 'center' }}>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--accent-red)', letterSpacing: '-1px' }}
+            >
+              ReduxCloud
+            </motion.div>
+          </Link>
+        </div>
+
+        {/* Right Section */}
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', justifyContent: 'flex-end' }}>
           {user && user.isVerified && (
             <Link 
               to="/dashboard"
-              style={{ color: 'var(--accent-red)', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}
+              style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '700', fontSize: '0.95rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem 1rem', borderRadius: '12px' }}
             >
               Dashboard
             </Link>
           )}
-          {user && user.isVerified && (
-            user.plan === 'none' ? (
-              <Link 
-                to="/plans"
-                style={{ 
-                  background: 'var(--accent-red)', 
-                  color: 'white', 
-                  textDecoration: 'none', 
-                  padding: '0.4rem 1rem', 
-                  borderRadius: '12px', 
-                  fontSize: '0.75rem', 
-                  fontWeight: '800',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
-                }}
-              >
-                <Zap size={14} fill="white" /> Claim 1GB Plan
-              </Link>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', width: '80px', gap: '2px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                    <span>Usage</span>
-                    <span>{user.storageLimit > 0 ? Math.round((user.storageUsed / user.storageLimit) * 100) : 0}%</span>
-                  </div>
-                  <div style={{ width: '100%', height: '4px', background: 'var(--bg-secondary)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${user.storageLimit > 0 ? (user.storageUsed / user.storageLimit) * 100 : 0}%` }}
-                      style={{ height: '100%', background: 'var(--accent-red)', borderRadius: '2px' }}
-                    />
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                  {formatBytes(user.storageUsed)} / {formatBytes(user.storageLimit)}
-                </div>
-              </div>
-            )
-          )}
 
           <button 
             onClick={() => dispatch(toggleTheme())}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem' }}
+            style={{ background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '12px' }}
           >
-            {themeMode === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+            {themeMode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
+
           {user && user.isVerified ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Link to="/plans" style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-red)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Upgrade</Link>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                {user.avatar && (
-                  <motion.img 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    src={user.avatar} 
-                    alt="Profile" 
-                    style={{ width: '38px', height: '38px', borderRadius: '50%', border: '2px solid var(--accent-red)', objectFit: 'cover' }} 
-                  />
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.8rem' }}>{user.fullname.split(' ')[0]}</span>
-                  <button 
-                    onClick={() => dispatch(logoutUser())}
-                    title="Logout"
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0, transition: 'color 0.2s' }}
-                    onMouseEnter={(e) => e.target.style.color = 'var(--accent-red)'}
-                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+            <div style={{ position: 'relative' }}>
+              <motion.div 
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '0.35rem 0.75rem', borderRadius: '100px', border: '1px solid var(--border-color)' }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <img 
+                  src={user.avatar} 
+                  alt="Avatar" 
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-red)' }} 
+                />
+                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{user.fullname.split(' ')[0]}</span>
+              </motion.div>
+
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    style={{ 
+                      position: 'absolute', 
+                      top: '120%', 
+                      right: 0, 
+                      width: '280px', 
+                      background: 'var(--bg-primary)', 
+                      borderRadius: '24px', 
+                      padding: '1.5rem', 
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.2)', 
+                      border: '1px solid var(--border-color)',
+                      zIndex: 1000
+                    }}
                   >
-                    <LogOut size={14} />
-                  </button>
-                </div>
-              </div>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Storage Used</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-red)' }}>{user.storageLimit > 0 ? Math.round((user.storageUsed / user.storageLimit) * 100) : 0}%</span>
+                      </div>
+                      <div style={{ width: '100%', height: '8px', background: 'var(--bg-secondary)', borderRadius: '4px', overflow: 'hidden', marginBottom: '0.75rem' }}>
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${user.storageLimit > 0 ? (user.storageUsed / user.storageLimit) * 100 : 0}%` }}
+                          style={{ height: '100%', background: 'var(--accent-red)' }}
+                        />
+                      </div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-primary)', textAlign: 'center' }}>
+                        {formatBytes(user.storageUsed)} used of {formatBytes(user.storageLimit)}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <Link 
+                        to="/plans" 
+                        onClick={() => setShowProfileMenu(false)}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          gap: '0.5rem', 
+                          background: 'var(--accent-red)', 
+                          color: 'white', 
+                          padding: '0.75rem', 
+                          borderRadius: '12px', 
+                          textDecoration: 'none', 
+                          fontWeight: '800', 
+                          fontSize: '0.9rem' 
+                        }}
+                      >
+                        <Zap size={16} fill="white" /> Upgrade Storage
+                      </Link>
+                      <button 
+                        onClick={() => { dispatch(logoutUser()); setShowProfileMenu(false); }}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          gap: '0.5rem', 
+                          background: 'transparent', 
+                          color: 'var(--text-secondary)', 
+                          padding: '0.75rem', 
+                          borderRadius: '12px', 
+                          border: '1px solid var(--border-color)', 
+                          cursor: 'pointer', 
+                          fontWeight: '700', 
+                          fontSize: '0.9rem' 
+                        }}
+                      >
+                        <LogOut size={16} /> Logout
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <button 
               onClick={() => { setAuthMode('login'); setShowLoginModal(true); }}
-              style={{ background: 'var(--accent-red)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}
+              style={{ 
+                background: 'var(--accent-red)', 
+                color: '#fff', 
+                border: 'none', 
+                padding: '0.6rem 1.5rem', 
+                borderRadius: '12px', 
+                cursor: 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                fontWeight: '800',
+                fontSize: '0.9rem',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+              }}
             >
               <LogIn size={18} /> Sign In
             </button>

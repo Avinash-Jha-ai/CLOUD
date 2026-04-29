@@ -286,7 +286,7 @@ export const socialLogin = async (req, res) => {
             
             user = await userModel.create(userData);
         } else {
-            // Update provider ID if missing
+            
             let updated = false;
             if (provider === 'google' && !user.googleId) { user.googleId = providerId; updated = true; }
             if (provider === 'github' && !user.githubId) { user.githubId = providerId; updated = true; }
