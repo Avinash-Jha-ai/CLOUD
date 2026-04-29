@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { logout, getMe, socialLogin } from "../controllers/auth.controller.js";
-import { authenticateUserByEmail } from "../middlewares/auth.middleware.js";
+import { authenticateUser } from "../middlewares/auth.middleware.js";
 
 const router =Router();
 
@@ -12,11 +12,11 @@ router.post("/social-login", socialLogin)
 /**
  * get-me
  */
-router.get("/me", authenticateUserByEmail, getMe)
+router.get("/me", authenticateUser, getMe)
 
 /**
  * logout
  */
-router.get("/logout", authenticateUserByEmail, logout);
+router.get("/logout", authenticateUser, logout);
 
 export default router
