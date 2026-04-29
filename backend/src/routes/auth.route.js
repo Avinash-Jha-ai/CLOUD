@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {upload} from "../middlewares/upload.middleware.js"
-import { register,login,logout,getMe,sentotp ,verifyEmail, socialLogin} from "../controllers/auth.controller.js";
+import { register, login, logout, getMe, sentotp, verifyEmail, socialLogin } from "../controllers/auth.controller.js";
+
 import { upgradePlan } from "../controllers/plan.controller.js";
 import { authenticateUser,authenticateUserByEmail } from "../middlewares/auth.middleware.js";
 const router =Router();
