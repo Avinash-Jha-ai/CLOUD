@@ -1,10 +1,7 @@
 import mongoose from "mongoose";
 import { config } from "./config.js";
 
-/**
- * Global is used here to maintain a cached connection across hot reloads
- * in development and function invocations in serverless environments.
- */
+
 let cached = global.mongoose;
 
 if (!cached) {
