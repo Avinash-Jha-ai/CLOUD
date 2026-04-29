@@ -3,6 +3,25 @@ import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../../services/firebase';
 import { API_BASE_URL } from '../../configs/api';
 
+// Retries once after 4s delay — handles Render.com cold-start (ERR_NETWORK_IO_SUSPENDED)
+const fetchWithRetry = async (url, options = {}, retries = 1, delayMs = 4000) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout per attempt
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeout);
+    return response;
+  } catch (err) {
+    clearTimeout(timeout);
+    if (retries > 0) {
+      console.warn(`[fetchWithRetry] Request failed (${err.message}), retrying in ${delayMs}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      return fetchWithRetry(url, options, retries - 1, delayMs);
+    }
+    throw err;
+  }
+};
+
 
 const callSocialLoginBackend = async (userData) => {
   const response = await fetch(`${API_BASE_URL}/api/auth/social-login`, {
@@ -81,7 +100,7 @@ export const sendOtp = createAsyncThunk(
   'auth/sendOtp',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/generateOtp`, {
+      const response = await fetchWithRetry(`${API_BASE_URL}/api/auth/generateOtp`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -89,6 +108,9 @@ export const sendOtp = createAsyncThunk(
       if (!response.ok) throw new Error(data.message || 'Failed to send OTP');
       return data;
     } catch (error) {
+      if (error.name === 'AbortError') {
+        return rejectWithValue('Server is waking up, please try again in a moment.');
+      }
       return rejectWithValue(error.message);
     }
   }
@@ -117,7 +139,7 @@ export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      const response = await fetchWithRetry(`${API_BASE_URL}/api/auth/me`, {
         method: 'GET',
         credentials: 'include',
       });
