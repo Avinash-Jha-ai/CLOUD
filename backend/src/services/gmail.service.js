@@ -2,13 +2,15 @@ import nodemailer from "nodemailer";
 import { config } from "../configs/config.js";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: config.EMAIL_USER,
     pass: config.EMAIL_PASS,
   },
-  connectionTimeout: 10000, // 10 seconds
-  socketTimeout: 10000,     // 10 seconds
+  connectionTimeout: 10000,
+  socketTimeout: 10000,
 });
 
 export const sendEmail = async (to, subject, html) => {

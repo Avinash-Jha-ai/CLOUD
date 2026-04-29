@@ -27,7 +27,7 @@ export const config = {
   RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID.trim(),
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET.trim(),
 
-  EMAIL_USER: process.env.EMAIL_USER,
-  EMAIL_PASS: process.env.EMAIL_PASS,
+  EMAIL_USER: process.env.EMAIL_USER?.trim(),
+  EMAIL_PASS: process.env.EMAIL_PASS?.trim(),
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
 };
