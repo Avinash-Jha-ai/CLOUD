@@ -1,10 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Shield, Zap, Cloud, CheckCircle, Code, Server, FolderUp } from 'lucide-react';
+import { loginWithGoogle } from '../features/auth/authSlice';
 
 const Home = () => {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+
+  const handleStartForFree = () => {
+    dispatch(loginWithGoogle());
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -57,7 +63,7 @@ const Home = () => {
             Store, sync, and share your files with military-grade encryption. Experience the fastest and most secure way to manage your digital life.
           </motion.p>
           <motion.div variants={itemVariants} style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            {!user && <button style={{ background: 'var(--accent-red)', color: 'white', padding: '1rem 2rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>Start for free</button>}
+            {!user && <button onClick={handleStartForFree} style={{ background: 'var(--accent-red)', color: 'white', padding: '1rem 2rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>Start for free</button>}
             <button style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '1rem 2rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', border: '1px solid var(--border-color)', cursor: 'pointer' }}>View Documentation</button>
           </motion.div>
         </motion.div>

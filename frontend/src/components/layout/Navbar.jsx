@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { toggleTheme } from '../../features/theme/themeSlice';
-import { loginWithGoogle, loginWithEmail, registerWithEmail, sendOtp, verifyOtp, logoutUser, clearError } from '../../features/auth/authSlice';
+import { loginWithGoogle, logoutUser, clearError } from '../../features/auth/authSlice';
 import { Moon, Sun, LogIn, LogOut, Mail, X, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,62 +17,24 @@ const formatBytes = (bytes) => {
 const Navbar = () => {
   const dispatch = useDispatch();
   const themeMode = useSelector((state) => state.theme.mode);
-  const { user, loading, error, otpSent } = useSelector((state) => state.auth);
+  const { user, loading, error } = useSelector((state) => state.auth);
   
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'verify'
   
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullname, setFullname] = useState('');
-  const [file, setFile] = useState(null);
-  const [otp, setOtp] = useState('');
-
-  useEffect(() => {
-    // If user is logged in but not verified, show verify modal
-    if (user && !user.isVerified) {
-      setShowLoginModal(true);
-      setAuthMode('verify');
-    } else if (user && user.isVerified) {
-      setShowLoginModal(false);
-    }
-  }, [user]);
-
-  const handleEmailAuth = (e) => {
-    e.preventDefault();
-    if (authMode === 'login') {
-      dispatch(loginWithEmail({ email, password }));
-    } else if (authMode === 'register') {
-      const formData = new FormData();
-      formData.append('fullname', fullname);
-      formData.append('email', email);
-      formData.append('password', password);
-      if (file) formData.append('file', file);
-      
-      dispatch(registerWithEmail(formData));
-    }
-  };
-
-  const handleVerifyOtp = (e) => {
-    e.preventDefault();
-    if (user?.email) {
-      dispatch(verifyOtp({ email: user.email, otp }));
-    }
-  };
-
-  const handleSendOtp = () => {
-    dispatch(sendOtp());
-  };
-
-  const handleSocialLogin = (provider) => {
-    if (provider === 'google') dispatch(loginWithGoogle());
+  const handleSocialLogin = () => {
+    dispatch(loginWithGoogle());
   };
 
   const closeAndClear = () => {
-    if (user && !user.isVerified) return; // Force verification
     setShowLoginModal(false);
     dispatch(clearError());
   };
+
+  useEffect(() => {
+    if (user) {
+      setShowLoginModal(false);
+    }
+  }, [user]);
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -111,7 +73,7 @@ const Navbar = () => {
 
         {/* Right Section */}
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', justifyContent: 'flex-end' }}>
-          {user && user.isVerified && (
+          {user && (
             <Link 
               to="/dashboard"
               style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '700', fontSize: '0.95rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem 1rem', borderRadius: '12px' }}
@@ -127,7 +89,7 @@ const Navbar = () => {
             {themeMode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          {user && user.isVerified ? (
+          {user ? (
             <div style={{ position: 'relative' }}>
               <motion.div 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -140,7 +102,7 @@ const Navbar = () => {
                   alt="Avatar" 
                   style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-red)' }} 
                 />
-                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{user.fullname.split(' ')[0]}</span>
+                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{user.fullname?.split(' ')[0] || 'User'}</span>
               </motion.div>
 
               <AnimatePresence>
@@ -225,7 +187,7 @@ const Navbar = () => {
             </div>
           ) : (
             <button 
-              onClick={() => { setAuthMode('login'); setShowLoginModal(true); }}
+              onClick={() => { setShowLoginModal(true); }}
               style={{ 
                 background: 'var(--accent-red)', 
                 color: '#fff', 
@@ -256,150 +218,68 @@ const Navbar = () => {
             <motion.div 
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               className="glass-panel"
-              style={{ background: 'var(--bg-primary)', padding: '2rem', width: '100%', maxWidth: '400px', borderRadius: '24px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}
+              style={{ background: 'var(--bg-primary)', padding: '2.5rem', width: '100%', maxWidth: '400px', borderRadius: '32px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', textAlign: 'center' }}
             >
-              {!(user && !user.isVerified) && (
-                <button 
-                  onClick={closeAndClear}
-                  style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'var(--bg-secondary)', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <X size={18} />
-                </button>
-              )}
+              <button 
+                onClick={closeAndClear}
+                style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'var(--bg-secondary)', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={18} />
+              </button>
               
-              <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)', textAlign: 'center', fontSize: '1.75rem', fontWeight: '800' }}>
-                {authMode === 'login' ? 'Welcome Back' : authMode === 'register' ? 'Join CLOUDAVI' : 'Verify Email'}
-              </h2>
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ width: '60px', height: '60px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                  <LogIn size={30} color="var(--accent-red)" />
+                </div>
+                <h2 style={{ color: 'var(--text-primary)', fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>
+                  Welcome to CLOUDAVI
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                  Please sign in to access your secure storage
+                </p>
+              </div>
               
               {error && (
                 <div style={{ color: 'var(--accent-red)', fontSize: '0.85rem', marginBottom: '1.5rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(239, 68, 68, 0.2)', lineHeight: '1.4' }}>
-                  <p style={{ margin: 0, fontWeight: '800' }}>Error</p>
+                  <p style={{ margin: 0, fontWeight: '800' }}>Authentication Error</p>
                   <p style={{ margin: '0.25rem 0 0 0', opacity: 0.8 }}>{error}</p>
                 </div>
               )}
 
-              {authMode === 'verify' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <p style={{ color: 'var(--text-secondary)', textAlign: 'center', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                    We've sent a verification code to:<br/><strong style={{ color: 'var(--text-primary)' }}>{user?.email}</strong>
-                  </p>
-                  {!otpSent ? (
-                     <button onClick={handleSendOtp} disabled={loading} style={{ background: 'var(--accent-red)', color: 'white', border: 'none', padding: '1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transition: 'transform 0.2s' }} onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'} onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
-                      {loading ? 'Connecting...' : 'Send Verification Code'}
-                     </button>
+              <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                <button 
+                  onClick={handleSocialLogin} type="button" disabled={loading}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '0.75rem', 
+                    background: 'var(--text-primary)', 
+                    color: 'var(--bg-primary)', 
+                    border: 'none', 
+                    padding: '1rem', 
+                    borderRadius: '14px', 
+                    cursor: 'pointer', 
+                    fontWeight: '700',
+                    fontSize: '1rem',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                >
+                  {loading ? (
+                    'Signing in...'
                   ) : (
-                    <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                      <input 
-                        type="text" placeholder="• • • • • •" required
-                        value={otp} onChange={e => setOtp(e.target.value)}
-                        maxLength="6"
-                        style={{ padding: '1rem', borderRadius: '12px', border: '2px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', textAlign: 'center', fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '8px' }}
-                      />
-                      <button type="submit" disabled={loading} style={{ background: 'var(--accent-red)', color: '#fff', border: 'none', padding: '1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}>
-                        {loading ? 'Verifying...' : 'Verify Now'}
-                      </button>
-                      <button type="button" onClick={handleSendOtp} disabled={loading} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '0.75rem', borderRadius: '12px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '600' }}>
-                        {loading ? 'Sending...' : 'Resend OTP'}
-                      </button>
-                    </form>
+                    <>
+                      <Mail size={20} /> Continue with Google
+                    </>
                   )}
-                  <button onClick={() => dispatch(logoutUser())} style={{ background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer', marginTop: '0.5rem', fontSize: '0.9rem', textDecoration: 'underline' }}>
-                    Logout and try another account
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-                    {authMode === 'register' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
-                        <div 
-                          onClick={() => document.getElementById('avatar-input').click()}
-                          style={{ 
-                            width: '90px', 
-                            height: '90px', 
-                            borderRadius: '50%', 
-                            background: 'var(--bg-secondary)', 
-                            border: '2px dashed var(--accent-red)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            cursor: 'pointer',
-                            overflow: 'hidden',
-                            position: 'relative',
-                            transition: 'all 0.3s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--text-primary)'}
-                          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--accent-red)'}
-                        >
-                          {file ? (
-                            <img src={URL.createObjectURL(file)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-primary)', fontWeight: 'bold' }}>+</div>
-                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>AVATAR</span>
-                            </div>
-                          )}
-                        </div>
-                        <input 
-                          id="avatar-input"
-                          type="file" accept="image/*"
-                          onChange={e => setFile(e.target.files[0])}
-                          style={{ display: 'none' }}
-                        />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Click to upload profile picture</span>
-                      </div>
-                    )}
-                    
-                    {authMode === 'register' && (
-                      <input 
-                        type="text" placeholder="Full Name" required
-                        value={fullname} onChange={e => setFullname(e.target.value)}
-                        style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' }}
-                        onFocus={e => e.target.style.borderColor = 'var(--accent-red)'}
-                        onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
-                      />
-                    )}
-                    <input 
-                      type="email" placeholder="Email Address" required
-                      value={email} onChange={e => setEmail(e.target.value)}
-                      style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' }}
-                      onFocus={e => e.target.style.borderColor = 'var(--accent-red)'}
-                      onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
-                    />
-                    <input 
-                      type="password" placeholder="Password" required minLength="6"
-                      value={password} onChange={e => setPassword(e.target.value)}
-                      style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' }}
-                      onFocus={e => e.target.style.borderColor = 'var(--accent-red)'}
-                      onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
-                    />
-                    <button type="submit" disabled={loading} style={{ background: 'var(--accent-red)', color: '#fff', border: 'none', padding: '1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', marginTop: '0.5rem', fontSize: '1rem' }}>
-                      {loading ? 'Processing...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
-                    </button>
-                  </form>
-
-                  <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                    <button type="button" onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); dispatch(clearError()); }} style={{ background: 'transparent', border: 'none', color: 'var(--accent-red)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                      {authMode === 'login' ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', margin: '1rem 0', color: 'var(--text-secondary)' }}>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
-                    <span style={{ padding: '0 1rem', fontSize: '0.875rem' }}>OR CONTINUE WITH</span>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
-                    <button 
-                      onClick={() => handleSocialLogin('google')} type="button" disabled={loading}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
-                    >
-                      <Mail size={18} color="var(--accent-red)" /> Continue with Google
-                    </button>
-                  </div>
-                </>
-              )}
+                </button>
+              </div>
+              
+              <p style={{ marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                By signing in, you agree to our Terms of Service and Privacy Policy.
+              </p>
             </motion.div>
           </motion.div>
         )}

@@ -18,15 +18,9 @@ const userSchema =mongoose.Schema({
     },
     password:{
         type:String,
-        required: function () {
-            return !(this.googleId || this.githubId);
-        }
+        required: false
     },
     googleId: {
-        type: String,
-        default:null
-    },
-    githubId: {
         type: String,
         default:null
     },
@@ -51,20 +45,15 @@ const userSchema =mongoose.Schema({
       type: Date
     },
 
-    otp: String,
-    otpExpiry: Date,
-
     isVerified: {
       type: Boolean,
-      default: function () {
-        return (this.googleId || this.githubId) ? true : false;
-      },
+      default: true,
     },
 },{timestamps :true})
 
 
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+  if (!this.password || !this.isModified("password")) return;
 
   const hash = await bcrypt.hash(this.password, 10);
   this.password = hash;
@@ -72,6 +61,7 @@ userSchema.pre("save", async function () {
 
 
 userSchema.methods.comparePassword = async function (password) {
+  if (!this.password) return false;
   return await bcrypt.compare(password, this.password);
 }
 

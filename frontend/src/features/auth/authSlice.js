@@ -4,8 +4,6 @@ import { auth, googleProvider } from '../../services/firebase';
 import { API_BASE_URL } from '../../configs/api';
 
 // Retries up to 2 times — handles Render.com cold-start & campus network blips.
-// No manual AbortController: the browser handles timeout naturally.
-// Stays in Redux loading state during retries; only surfaces error after all attempts fail.
 const fetchWithRetry = async (url, options = {}, retries = 2, delayMs = 2000) => {
   try {
     const response = await fetch(url, options);
@@ -49,81 +47,6 @@ export const loginWithGoogle = createAsyncThunk(
       });
 
       return backendData.user;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-
-
-export const loginWithEmail = createAsyncThunk(
-  'auth/loginWithEmail',
-  async ({ email, password }, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Login failed');
-      return data.user;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const registerWithEmail = createAsyncThunk(
-  'auth/registerWithEmail',
-  async (formData, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        body: formData, // FormData directly
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Registration failed');
-      return data.user;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const sendOtp = createAsyncThunk(
-  'auth/sendOtp',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await fetchWithRetry(`${API_BASE_URL}/api/auth/generateOtp`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to send OTP');
-      return data;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const verifyOtp = createAsyncThunk(
-  'auth/verifyOtp',
-  async ({ email, otp }, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Verification failed');
-      return data.user;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -202,7 +125,6 @@ const initialState = {
   user: null,
   loading: false,
   error: null,
-  otpSent: false,
 };
 
 const handlePending = (state) => { state.loading = true; state.error = null; };
@@ -225,36 +147,10 @@ export const authSlice = createSlice({
       .addCase(loginWithGoogle.pending, handlePending)
       .addCase(loginWithGoogle.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
       .addCase(loginWithGoogle.rejected, handleRejected)
-      // Email Login
-      .addCase(loginWithEmail.pending, handlePending)
-      .addCase(loginWithEmail.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
-      .addCase(loginWithEmail.rejected, handleRejected)
       // Check Auth
       .addCase(checkAuth.pending, (state) => { state.loading = true; })
       .addCase(checkAuth.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
       .addCase(checkAuth.rejected, (state) => { state.loading = false; state.user = null; })
-      // Register
-      .addCase(registerWithEmail.pending, handlePending)
-      .addCase(registerWithEmail.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
-      .addCase(registerWithEmail.rejected, handleRejected)
-      // Send OTP
-      .addCase(sendOtp.pending, handlePending)
-      .addCase(sendOtp.fulfilled, (state) => { state.loading = false; state.otpSent = true; })
-      .addCase(sendOtp.rejected, (state, action) => { 
-        state.loading = false; 
-        state.error = action.payload;
-        // If we have a debug OTP in the error message, allow the user to see the input field
-        if (action.payload && action.payload.includes('DEBUG: Your OTP is')) {
-          state.otpSent = true;
-        }
-      })
-      // Verify OTP
-      .addCase(verifyOtp.pending, handlePending)
-      .addCase(verifyOtp.fulfilled, (state, action) => { 
-        state.loading = false; 
-        state.user = action.payload; 
-      })
-      .addCase(verifyOtp.rejected, handleRejected)
       // Upgrade Plan
       .addCase(upgradePlan.pending, handlePending)
       .addCase(upgradePlan.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
@@ -264,7 +160,7 @@ export const authSlice = createSlice({
       .addCase(verifyPayment.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
       .addCase(verifyPayment.rejected, handleRejected)
       // Logout
-      .addCase(logoutUser.fulfilled, (state) => { state.user = null; state.otpSent = false; });
+      .addCase(logoutUser.fulfilled, (state) => { state.user = null; });
   },
 });
 
