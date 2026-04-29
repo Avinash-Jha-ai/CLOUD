@@ -87,7 +87,13 @@ export const socialLogin = async (req, res) => {
             return res.status(400).json({ message: "Only Google login is supported", success: false });
         }
 
-        let user = await userModel.findOne({ email });
+        let user;
+        try {
+            user = await userModel.findOne({ email });
+        } catch (dbErr) {
+            console.error("DB Find Error:", dbErr);
+            throw new Error("Database lookup failed: " + dbErr.message);
+        }
 
         if (!user) {
             const userData = {
@@ -97,13 +103,23 @@ export const socialLogin = async (req, res) => {
                 isVerified: true,
                 googleId: providerId
             };
-            user = await userModel.create(userData);
-            console.log("New user created via social login:", email);
+            try {
+                user = await userModel.create(userData);
+                console.log("New user created via social login:", email);
+            } catch (createErr) {
+                console.error("DB Create Error:", createErr);
+                throw new Error("User creation failed: " + createErr.message);
+            }
         } else {
             if (!user.googleId) {
                 user.googleId = providerId;
-                await user.save();
-                console.log("Google ID updated for existing user:", email);
+                try {
+                    await user.save();
+                    console.log("Google ID updated for existing user:", email);
+                } catch (saveErr) {
+                    console.error("DB Save Error:", saveErr);
+                    throw new Error("User update failed: " + saveErr.message);
+                }
             }
         }
 
@@ -111,7 +127,7 @@ export const socialLogin = async (req, res) => {
     } catch (error) {
         console.error("Error in socialLogin:", error);
         return res.status(500).json({ 
-            message: "Error in social login", 
+            message: "Error in social login: " + error.message, 
             success: false,
             error: error.message 
         });
