@@ -16,7 +16,7 @@ if (!process.env.CLOUDINARY_API_SECRET) throw new Error("CLOUDINARY_API_SECRET i
 
 export const config = {
   MONGO_URI: process.env.MONGO_URI,
-  JWT_SECRET: process.env.JWT_SECRET,
+  JWT_SECRET: process.env.JWT_SECRET?.trim(),
 
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,

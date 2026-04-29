@@ -31,7 +31,7 @@ app.get("/", (_req, res) => {
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 app.use("/api/auth",authRouter);
-app.use("/api/",folderRouter);
+app.use("/api",folderRouter);
 app.use("/api/file",fileRouter);
 app.use("/api/search", searchRouter);
 app.use("/api/plan", planRouter);
