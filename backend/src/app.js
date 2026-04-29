@@ -37,6 +37,8 @@ app.get("/", (_req, res) => {
     res.status(200).json({ message: "Server is running" });
 });
 
+app.get("/favicon.ico", (req, res) => res.status(204).end());
+
 app.use("/api/auth",authRouter);
 app.use("/api/",folderRouter);
 app.use("/api/file",fileRouter);
