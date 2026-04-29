@@ -139,22 +139,12 @@ export const sentotp = async (req, res) => {
             });
         }
 
-        // 60-second cooldown to prevent OTP spam / double-clicks
-        if (user.otpExpiry && (new Date(user.otpExpiry).getTime() - Date.now()) > 4.5 * 60 * 1000) {
-            return res.status(429).json({
-                message: "OTP already sent. Please wait 60 seconds before requesting another.",
-                success: false
-            });
-        }
-
         const otp = generateOTP();
-        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now (as Date)
+        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-        user.otp = otp;
-        user.otpExpiry = otpExpiry;
-        await user.save();
-
-        console.log(`[sentotp] Sending OTP to ${user.email}`);
+        // Send email FIRST — only save OTP to DB if delivery succeeds.
+        // (If we save first and email fails, user gets locked out by stale OTP in DB)
+        console.log(`[sentotp] Attempting to send OTP to ${user.email}`);
 
         await sendEmail(
             user.email,
@@ -162,7 +152,12 @@ export const sentotp = async (req, res) => {
             emailTemplate(user.fullname, user.email, otp)
         );
 
-        console.log(`[sentotp] OTP sent successfully to ${user.email}`);
+        // Email sent successfully — now persist the OTP
+        user.otp = otp;
+        user.otpExpiry = otpExpiry;
+        await user.save();
+
+        console.log(`[sentotp] OTP saved and email delivered to ${user.email}`);
 
         return res.status(200).json({
             message: "otp sent successfully",
@@ -172,7 +167,7 @@ export const sentotp = async (req, res) => {
     } catch (error) {
         console.error("[sentotp] Error:", error.message);
         return res.status(500).json({
-            message: error.message || "error in sent otp",
+            message: error.message || "Failed to send OTP. Please try again.",
             success: false
         });
     }
