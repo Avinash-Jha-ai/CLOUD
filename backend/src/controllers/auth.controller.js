@@ -129,106 +129,99 @@ export const register =async (req,res)=>{
 }
 
 export const sentotp = async (req, res) => {
-  let otp;
-  let otpExpiry;
-  try {
-    const user = req.user;
-    if (!user) {
-        return res.status(401).json({ message: "User context not found", success: false });
-    }
-
-    otp = generateOTP();
-    otpExpiry = Date.now() + 10 * 60 * 1000;
-
-    user.otp = otp;
-    user.otpExpiry = otpExpiry;
-    await user.save();
-
-    console.log(`Attempting to send OTP to ${user.email}...`);
     try {
+        const user = await userModel.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "user not found",
+                success: false
+            });
+        }
+
+        const otp = generateOTP();
+        const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+        user.otp = otp;
+        user.otpExpiry = otpExpiry;
+        await user.save();
+
         await sendEmail(
-          user.email,
-          "Verify your CLOUDAVI Account",
-          emailTemplate(user.fullname, user.email, otp)
+            user.email,
+            "Verify your account",
+            emailTemplate(user.fullname, user.email, otp)
         );
-        console.log(`OTP sent successfully to ${user.email}`);
-    } catch (emailError) {
-        console.error("Email send failed but OTP is saved in DB:", emailError.message);
-        
-        throw emailError; 
+
+        return res.status(200).json({
+            message: "otp sent successfully",
+            success: true
+        });
+
+    } catch (error) {
+        console.log("error in sentotp : ", error);
+        return res.status(500).json({
+            message: "error in sent otp",
+            success: false,
+            error: error.message
+        });
     }
-
-    return res.status(200).json({
-      message: "otp sent",
-      success: true,
-    });
-
-  } catch (error) {
-    console.error("CRITICAL: sentotp failed.", {
-      emailUser: config.EMAIL_USER ? `${config.EMAIL_USER.substring(0, 3)}...` : 'MISSING',
-      error: error.message
-    });
-    
-    return res.status(500).json({
-      message: `Email Service Error: ${error.message}. (DEBUG: Your OTP is ${otp})`,
-      success: false,
-      error: error.message
-    });
-  }
 };
 
 export const verifyEmail = async (req, res) => {
-  const { email, otp } = req.body;
+    const { email, otp } = req.body;
 
-  try {
-    const user = await userModel.findOne({ email });
+    try {
+        const user = await userModel.findOne({ email });
 
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
+        if (!user) {
+            return res.status(404).json({
+                message: "user not found",
+                success: false
+            });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({
+                message: "email already verified",
+                success: false
+            });
+        }
+
+        if (user.otp !== otp || user.otpExpiry < Date.now()) {
+            return res.status(400).json({
+                message: "invalid or expired otp",
+                success: false
+            });
+        }
+
+        user.isVerified = true;
+        user.otp = null;
+        user.otpExpiry = null;
+        await user.save();
+
+        return res.status(200).json({
+            message: "email verified successfully",
+            success: true,
+            user: {
+                id: user.id,
+                fullname: user.fullname,
+                email: user.email,
+                avatar: user.avatar,
+                isVerified: user.isVerified,
+                storageUsed: user.storageUsed,
+                storageLimit: user.storageLimit,
+                plan: user.plan
+            }
+        });
+
+    } catch (error) {
+        console.log("error in verifyEmail : ", error);
+        return res.status(500).json({
+            message: "error in verify email",
+            success: false,
+            error: error.message
+        });
     }
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: "Email already verified. Please login.", success: false });
-    }
-
-    if (!user.otp || user.otp !== otp) {
-      return res.status(400).json({ message: "Invalid or expired OTP", success: false });
-    }
-
-
-    if (user.otpExpiry < Date.now()) {
-      return res.status(400).json({ message: "OTP expired. ", success: false });
-    }
-
-    user.isVerified = true;
-    user.otp = null;
-    user.otpExpiry = null;
-
-    await user.save();
-
-    return res.status(200).json({
-      message: "Email verified successfully",
-      success: true,
-      user: {
-          id: user.id,
-          fullname: user.fullname,
-          email: user.email,
-          avatar: user.avatar,
-          isVerified: user.isVerified,
-          storageUsed: user.storageUsed,
-          storageLimit: user.storageLimit,
-          plan: user.plan
-      }
-    });
-
-  } catch (error) {
-    console.log("Verify Email Error:", error);
-    return res.status(500).json({
-      message: "Error in email verification",
-      success: false,
-      error: error.message
-    });
-  }
 };
 
 export const login =async (req,res)=>{
