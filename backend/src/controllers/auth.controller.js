@@ -46,8 +46,8 @@ export const emailTemplate = (fullname, email, otp) => {
     <table align="center" width="100%" style="max-width:600px;background:#fff;border-radius:10px;overflow:hidden;">
       
       <tr>
-        <td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:20px;text-align:center;color:white;">
-          <h1>Verify Your Email</h1>
+        <td style="background:linear-gradient(135deg,#ef4444,#991b1b);padding:20px;text-align:center;color:white;">
+          <h1>CLOUDAVI Verification</h1>
         </td>
       </tr>
 
@@ -93,11 +93,13 @@ export const register =async (req,res)=>{
 
         const isAlreadyUserExist =await userModel.findOne({email});
 
-        if(isAlreadyUserExist){
+        if (isAlreadyUserExist) {
             return res.status(400).json({
-                message:"user already exist",
-                success:false
-            })
+                message: isAlreadyUserExist.isVerified 
+                    ? "User already exists. Please login instead." 
+                    : "User already exists but is not verified. Please verify your email.",
+                success: false
+            });
         }
 
         let avatarUrl ="";
@@ -133,11 +135,13 @@ export const sentotp = async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = Date.now() + 10 * 60 * 1000;
 
+    console.log(`Attempting to send OTP to ${user.email}...`);
     await sendEmail(
       user.email,
-      "Verify your email",
+      "Verify your CLOUDAVI Account",
       emailTemplate(user.fullname, user.email, otp)
     );
+    console.log(`OTP sent successfully to ${user.email}`);
 
     user.otp = otp;
     user.otpExpiry = otpExpiry;
@@ -152,8 +156,9 @@ export const sentotp = async (req, res) => {
   } catch (error) {
     console.log("error in sentotp : ", error);
     return res.status(500).json({
-      message: "error in sent otp",
+      message: "Failed to send verification email. Please check server logs or email configuration.",
       success: false,
+      error: error.message
     });
   }
 };

@@ -279,7 +279,12 @@ const Navbar = () => {
                 {authMode === 'login' ? 'Welcome Back' : authMode === 'register' ? 'Join CLOUDAVI' : 'Verify Email'}
               </h2>
               
-              {error && <p style={{ color: 'var(--accent-red)', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>{error}</p>}
+              {error && (
+                <div style={{ color: 'var(--accent-red)', fontSize: '0.85rem', marginBottom: '1.5rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(239, 68, 68, 0.2)', lineHeight: '1.4' }}>
+                  <p style={{ margin: 0, fontWeight: '800' }}>Error</p>
+                  <p style={{ margin: '0.25rem 0 0 0', opacity: 0.8 }}>{error}</p>
+                </div>
+              )}
 
               {authMode === 'verify' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
