@@ -15,7 +15,10 @@ const allowedOrigins = [config.FRONTEND_URL, "https://cloud-nine-dusky.vercel.ap
 
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        const normalizedOrigin = origin ? origin.replace(/\/$/, "") : null;
+        const normalizedAllowed = allowedOrigins.map(o => o ? o.replace(/\/$/, "") : o);
+        
+        if (!origin || normalizedAllowed.indexOf(normalizedOrigin) !== -1) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
