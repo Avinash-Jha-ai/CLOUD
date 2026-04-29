@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { toggleTheme } from '../../features/theme/themeSlice';
 import { loginWithGoogle, loginWithGithub, loginWithEmail, registerWithEmail, sendOtp, verifyOtp, logoutUser, clearError } from '../../features/auth/authSlice';
-import { Moon, Sun, LogIn, LogOut, Mail, X } from 'lucide-react';
+import { Moon, Sun, LogIn, LogOut, Mail, X, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const GithubIcon = () => (
@@ -110,24 +110,45 @@ const Navbar = () => {
             </Link>
           )}
           {user && user.isVerified && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', width: '80px', gap: '2px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                  <span>Usage</span>
-                  <span>{Math.round((user.storageUsed / user.storageLimit) * 100)}%</span>
+            user.plan === 'none' ? (
+              <Link 
+                to="/plans"
+                style={{ 
+                  background: 'var(--accent-red)', 
+                  color: 'white', 
+                  textDecoration: 'none', 
+                  padding: '0.4rem 1rem', 
+                  borderRadius: '12px', 
+                  fontSize: '0.75rem', 
+                  fontWeight: '800',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                }}
+              >
+                <Zap size={14} fill="white" /> Claim 1GB Plan
+              </Link>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', width: '80px', gap: '2px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                    <span>Usage</span>
+                    <span>{user.storageLimit > 0 ? Math.round((user.storageUsed / user.storageLimit) * 100) : 0}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '4px', background: 'var(--bg-secondary)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${user.storageLimit > 0 ? (user.storageUsed / user.storageLimit) * 100 : 0}%` }}
+                      style={{ height: '100%', background: 'var(--accent-red)', borderRadius: '2px' }}
+                    />
+                  </div>
                 </div>
-                <div style={{ width: '100%', height: '4px', background: 'var(--bg-secondary)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(user.storageUsed / user.storageLimit) * 100}%` }}
-                    style={{ height: '100%', background: 'var(--accent-red)', borderRadius: '2px' }}
-                  />
+                <div style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                  {formatBytes(user.storageUsed)} / {formatBytes(user.storageLimit)}
                 </div>
               </div>
-              <div style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                {formatBytes(user.storageUsed)} / {formatBytes(user.storageLimit)}
-              </div>
-            </div>
+            )
           )}
 
           <button 

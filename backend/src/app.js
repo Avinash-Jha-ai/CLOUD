@@ -7,7 +7,16 @@ import searchRouter from "./routes/search.route.js"
 import planRouter from "./routes/plan.route.js"
 import paymentRouter from "./routes/payment.route.js"
 
+import cors from "cors";
+import { config } from "./configs/config.js";
+
 const app =express();
+app.use(cors({
+    origin: config.FRONTEND_URL,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

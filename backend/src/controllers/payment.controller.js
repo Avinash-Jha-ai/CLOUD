@@ -4,6 +4,10 @@ import { config } from "../configs/config.js";
 import userModel from "../models/user.model.js";
 
 const plans = {
+  free: {
+    amount: 1 * 100, // ₹1
+    limit: 1 * 1024 * 1024 * 1024, // 1GB
+  },
   pro: {
     amount: 50 * 100,
     limit: 2 * 1024 * 1024 * 1024,

@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { upgradePlan, verifyPayment } from '../features/auth/authSlice';
 import { motion } from 'framer-motion';
 import { Check, Zap, Crown, Shield } from 'lucide-react';
+import { API_BASE_URL } from '../configs/api';
+
 
 const Plans = () => {
   const dispatch = useDispatch();
@@ -11,8 +13,8 @@ const Plans = () => {
   const plans = [
     {
       id: 'free',
-      name: 'Free',
-      price: '₹0',
+      name: 'Free (Starter)',
+      price: '₹1',
       storage: '1 GB',
       features: ['Secure Cloud Storage', 'Basic Support', 'Community Access'],
       icon: <Shield size={40} color="#64748b" />,
@@ -44,12 +46,12 @@ const Plans = () => {
 
     try {
       // 1. Get Razorpay Key
-      const keyRes = await fetch('/api/payment/get-key', { credentials: 'include' });
+      const keyRes = await fetch(`${API_BASE_URL}/api/payment/get-key`, { credentials: 'include' });
       if (!keyRes.ok) throw new Error("Failed to fetch Razorpay Key. Please check server logs.");
       const { key } = await keyRes.json();
 
       // 2. Create Order
-      const orderRes = await fetch('/api/payment/create-order', {
+      const orderRes = await fetch(`${API_BASE_URL}/api/payment/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planId }),

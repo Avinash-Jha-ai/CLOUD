@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { API_BASE_URL } from '../../configs/api';
+
 
 export const fetchFolderContent = createAsyncThunk(
   'drive/fetchFolderContent',
   async (folderId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/folder/${folderId || 'root'}`, {
+      const response = await fetch(`${API_BASE_URL}/api/folder/${folderId || 'root'}`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -21,7 +23,7 @@ export const createFolder = createAsyncThunk(
   'drive/createFolder',
   async ({ name, color, parentId }, { rejectWithValue }) => {
     try {
-      const url = parentId ? `/api/folder/${parentId}` : '/api/folder'; 
+      const url = parentId ? `${API_BASE_URL}/api/folder/${parentId}` : `${API_BASE_URL}/api/folder`; 
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,7 +49,7 @@ export const uploadFiles = createAsyncThunk(
         formData.append('customNames', JSON.stringify(customNames));
       }
       
-      const response = await fetch(`/api/file/upload/${folderId || 'root'}`, {
+      const response = await fetch(`${API_BASE_URL}/api/file/upload/${folderId || 'root'}`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -65,7 +67,7 @@ export const deleteFile = createAsyncThunk(
   'drive/deleteFile',
   async (fileId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/file/delete/${fileId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/file/delete/${fileId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -82,7 +84,7 @@ export const deleteFolder = createAsyncThunk(
   'drive/deleteFolder',
   async (folderId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/folder/${folderId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/folder/${folderId}`, {
         method: 'DELETE',
         credentials: 'include',
       });

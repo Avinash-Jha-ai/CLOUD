@@ -1,9 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '../../services/firebase';
+import { API_BASE_URL } from '../../configs/api';
+
 
 const callSocialLoginBackend = async (userData) => {
-  const response = await fetch('/api/auth/social-login', {
+  const response = await fetch(`${API_BASE_URL}/api/auth/social-login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData),
@@ -62,7 +64,7 @@ export const loginWithEmail = createAsyncThunk(
   'auth/loginWithEmail',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -81,7 +83,7 @@ export const registerWithEmail = createAsyncThunk(
   'auth/registerWithEmail',
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         body: formData, // FormData directly
         credentials: 'include',
@@ -99,7 +101,7 @@ export const sendOtp = createAsyncThunk(
   'auth/sendOtp',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/generateOtp', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/generateOtp`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -116,7 +118,7 @@ export const verifyOtp = createAsyncThunk(
   'auth/verifyOtp',
   async ({ email, otp }, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
@@ -135,7 +137,7 @@ export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -152,7 +154,7 @@ export const upgradePlan = createAsyncThunk(
   'auth/upgradePlan',
   async (plan, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/upgrade', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/upgrade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan }),
@@ -171,7 +173,7 @@ export const verifyPayment = createAsyncThunk(
   'auth/verifyPayment',
   async (paymentData, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/payment/verify-payment', {
+      const response = await fetch(`${API_BASE_URL}/api/payment/verify-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(paymentData),
@@ -191,7 +193,7 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await signOut(auth);
-      await fetch('/api/auth/logout', { method: 'GET', credentials: 'include' });
+      await fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'GET', credentials: 'include' });
       return null;
     } catch (error) {
       return rejectWithValue(error.message);
