@@ -223,7 +223,14 @@ export const authSlice = createSlice({
       // Send OTP
       .addCase(sendOtp.pending, handlePending)
       .addCase(sendOtp.fulfilled, (state) => { state.loading = false; state.otpSent = true; })
-      .addCase(sendOtp.rejected, handleRejected)
+      .addCase(sendOtp.rejected, (state, action) => { 
+        state.loading = false; 
+        state.error = action.payload;
+        // If we have a debug OTP in the error message, allow the user to see the input field
+        if (action.payload && action.payload.includes('DEBUG: Your OTP is')) {
+          state.otpSent = true;
+        }
+      })
       // Verify OTP
       .addCase(verifyOtp.pending, handlePending)
       .addCase(verifyOtp.fulfilled, (state, action) => { 
