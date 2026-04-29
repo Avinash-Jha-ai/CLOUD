@@ -9,9 +9,6 @@ if (!process.env.CLOUDINARY_CLOUD_NAME) throw new Error("CLOUDINARY_CLOUD_NAME i
 if (!process.env.CLOUDINARY_API_KEY) throw new Error("CLOUDINARY_API_KEY is not defined");
 if (!process.env.CLOUDINARY_API_SECRET) throw new Error("CLOUDINARY_API_SECRET is not defined");
 
-// RAZORPAY keys are checked in the config object safely
-
-
 
 
 export const config = {

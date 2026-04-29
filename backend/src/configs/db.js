@@ -1,19 +1,46 @@
 import mongoose from "mongoose";
-import {config} from "./config.js"
+import { config } from "./config.js";
 
+/**
+ * Global is used here to maintain a cached connection across hot reloads
+ * in development and function invocations in serverless environments.
+ */
+let cached = global.mongoose;
 
-const connectDB = async () => {
-    try {
-        if (mongoose.connection.readyState >= 1) return;
-        
-        await mongoose.connect(config.MONGO_URI, {
-            serverSelectionTimeoutMS: 5000,
-        });
-        console.log("Database connected successfully");
-    } catch (error) {
-        console.error("Database connection error:", error.message);
-        
-    }
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null };
 }
 
-export default connectDB
+const connectDB = async () => {
+    if (cached.conn) {
+        return cached.conn;
+    }
+
+    if (!cached.promise) {
+        const opts = {
+            serverSelectionTimeoutMS: 5000,
+            bufferCommands: false, // Fail fast if connection is not ready
+        };
+
+        console.log("Connecting to Database...");
+        cached.promise = mongoose.connect(config.MONGO_URI, opts).then((mongoose) => {
+            console.log("Database connected successfully");
+            return mongoose;
+        }).catch((err) => {
+            console.error("Database connection error:", err.message);
+            cached.promise = null; // Reset promise so we can retry
+            throw err;
+        });
+    }
+
+    try {
+        cached.conn = await cached.promise;
+    } catch (e) {
+        cached.promise = null;
+        throw e;
+    }
+
+    return cached.conn;
+};
+
+export default connectDB;

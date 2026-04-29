@@ -9,6 +9,7 @@ import paymentRouter from "./routes/payment.route.js"
 
 import cors from "cors";
 import { config } from "./configs/config.js";
+import { ensureDB } from "./middlewares/db.middleware.js";
 
 const app =express();
 const allowedOrigins = [config.FRONTEND_URL, "https://cloud-nine-dusky.vercel.app", "http://localhost:5173"];
@@ -23,6 +24,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Ensure DB connection for all requests
+app.use(ensureDB);
 
 app.get("/", (_req, res) => {
     res.status(200).json({ message: "Server is running" });
