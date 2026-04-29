@@ -126,7 +126,7 @@ export const verifyOtp = createAsyncThunk(
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Verification failed');
-      return true; // true means verified
+      return data.user;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -250,9 +250,9 @@ export const authSlice = createSlice({
       .addCase(sendOtp.rejected, handleRejected)
       // Verify OTP
       .addCase(verifyOtp.pending, handlePending)
-      .addCase(verifyOtp.fulfilled, (state) => { 
+      .addCase(verifyOtp.fulfilled, (state, action) => { 
         state.loading = false; 
-        if (state.user) state.user.isVerified = true; 
+        state.user = action.payload; 
       })
       .addCase(verifyOtp.rejected, handleRejected)
       // Upgrade Plan

@@ -194,7 +194,17 @@ export const verifyEmail = async (req, res) => {
 
     return res.status(200).json({
       message: "Email verified successfully",
-      success: true
+      success: true,
+      user: {
+          id: user.id,
+          fullname: user.fullname,
+          email: user.email,
+          avatar: user.avatar,
+          isVerified: user.isVerified,
+          storageUsed: user.storageUsed,
+          storageLimit: user.storageLimit,
+          plan: user.plan
+      }
     });
 
   } catch (error) {
