@@ -32,13 +32,13 @@ const userSchema =mongoose.Schema({
 
     storageLimit: {
       type: Number,
-      default: 1 * 1024 * 1024 * 1024  // 1 GB default (free tier)
+      default: 0
     },
 
     plan: {
       type: String,
       enum: ["none", "free", "pro", "premium"],
-      default: "free"
+      default: "none"
     },
 
     planExpiry: {
