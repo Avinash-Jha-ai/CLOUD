@@ -154,9 +154,13 @@ export const sentotp = async (req, res) => {
     });
 
   } catch (error) {
-    console.log("error in sentotp : ", error);
+    console.error("CRITICAL: sentotp failed.", {
+      emailUser: config.EMAIL_USER ? `${config.EMAIL_USER.substring(0, 3)}...` : 'MISSING',
+      error: error.message
+    });
+    
     return res.status(500).json({
-      message: "Failed to send verification email. Please check server logs or email configuration.",
+      message: `Email Service Error: ${error.message}. (DEBUG: Your OTP is ${otp})`,
       success: false,
       error: error.message
     });
