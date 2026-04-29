@@ -3,10 +3,12 @@ import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../../services/firebase';
 import { API_BASE_URL } from '../../configs/api';
 
-// Retries once after 4s delay — handles Render.com cold-start (ERR_NETWORK_IO_SUSPENDED)
-const fetchWithRetry = async (url, options = {}, retries = 1, delayMs = 4000) => {
+// Retries up to 2 times — handles Render.com cold-start (can take 30-50s to wake)
+// Stays in loading state during retries; only surfaces error after all attempts fail.
+const fetchWithRetry = async (url, options = {}, retries = 2, delayMs = 2000) => {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout per attempt
+  // 50s per attempt — enough for Render free-tier cold start
+  const timeout = setTimeout(() => controller.abort(), 50000);
   try {
     const response = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(timeout);
@@ -14,11 +16,12 @@ const fetchWithRetry = async (url, options = {}, retries = 1, delayMs = 4000) =>
   } catch (err) {
     clearTimeout(timeout);
     if (retries > 0) {
-      console.warn(`[fetchWithRetry] Request failed (${err.message}), retrying in ${delayMs}ms...`);
+      console.warn(`[fetchWithRetry] Attempt failed (${err.message}), retrying in ${delayMs}ms... (${retries} left)`);
       await new Promise(resolve => setTimeout(resolve, delayMs));
       return fetchWithRetry(url, options, retries - 1, delayMs);
     }
-    throw err;
+    // All retries exhausted — throw a clean user-facing message
+    throw new Error('Unable to reach server. Please check your connection and try again.');
   }
 };
 
@@ -108,9 +111,6 @@ export const sendOtp = createAsyncThunk(
       if (!response.ok) throw new Error(data.message || 'Failed to send OTP');
       return data;
     } catch (error) {
-      if (error.name === 'AbortError') {
-        return rejectWithValue('Server is waking up, please try again in a moment.');
-      }
       return rejectWithValue(error.message);
     }
   }

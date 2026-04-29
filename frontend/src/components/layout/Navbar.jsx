@@ -285,7 +285,7 @@ const Navbar = () => {
                   </p>
                   {!otpSent ? (
                      <button onClick={handleSendOtp} disabled={loading} style={{ background: 'var(--accent-red)', color: 'white', border: 'none', padding: '1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transition: 'transform 0.2s' }} onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'} onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
-                      {loading ? 'Sending...' : 'Send Verification Code'}
+                      {loading ? 'Connecting...' : 'Send Verification Code'}
                      </button>
                   ) : (
                     <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -297,6 +297,9 @@ const Navbar = () => {
                       />
                       <button type="submit" disabled={loading} style={{ background: 'var(--accent-red)', color: '#fff', border: 'none', padding: '1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}>
                         {loading ? 'Verifying...' : 'Verify Now'}
+                      </button>
+                      <button type="button" onClick={handleSendOtp} disabled={loading} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '0.75rem', borderRadius: '12px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '600' }}>
+                        {loading ? 'Sending...' : 'Resend OTP'}
                       </button>
                     </form>
                   )}

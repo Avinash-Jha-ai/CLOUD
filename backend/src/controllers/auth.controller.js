@@ -139,12 +139,22 @@ export const sentotp = async (req, res) => {
             });
         }
 
+        // 60-second cooldown to prevent OTP spam / double-clicks
+        if (user.otpExpiry && (new Date(user.otpExpiry).getTime() - Date.now()) > 4.5 * 60 * 1000) {
+            return res.status(429).json({
+                message: "OTP already sent. Please wait 60 seconds before requesting another.",
+                success: false
+            });
+        }
+
         const otp = generateOTP();
-        const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
+        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now (as Date)
 
         user.otp = otp;
         user.otpExpiry = otpExpiry;
         await user.save();
+
+        console.log(`[sentotp] Sending OTP to ${user.email}`);
 
         await sendEmail(
             user.email,
@@ -152,17 +162,18 @@ export const sentotp = async (req, res) => {
             emailTemplate(user.fullname, user.email, otp)
         );
 
+        console.log(`[sentotp] OTP sent successfully to ${user.email}`);
+
         return res.status(200).json({
             message: "otp sent successfully",
             success: true
         });
 
     } catch (error) {
-        console.log("error in sentotp : ", error);
+        console.error("[sentotp] Error:", error.message);
         return res.status(500).json({
-            message: "error in sent otp",
-            success: false,
-            error: error.message
+            message: error.message || "error in sent otp",
+            success: false
         });
     }
 };
@@ -187,9 +198,21 @@ export const verifyEmail = async (req, res) => {
             });
         }
 
-        if (user.otp !== otp || user.otpExpiry < Date.now()) {
+        if (!user.otp || !user.otpExpiry) {
             return res.status(400).json({
-                message: "invalid or expired otp",
+                message: "No OTP found. Please request a new one.",
+                success: false
+            });
+        }
+
+        // Use getTime() to reliably compare Date object vs Number timestamp
+        const isExpired = new Date(user.otpExpiry).getTime() < Date.now();
+        const isInvalid = user.otp !== String(otp).trim();
+
+        if (isInvalid || isExpired) {
+            console.log(`[verifyEmail] OTP check failed for ${email} | invalid=${isInvalid} expired=${isExpired}`);
+            return res.status(400).json({
+                message: isExpired ? "OTP has expired. Please request a new one." : "Invalid OTP. Please try again.",
                 success: false
             });
         }
@@ -198,6 +221,8 @@ export const verifyEmail = async (req, res) => {
         user.otp = null;
         user.otpExpiry = null;
         await user.save();
+
+        console.log(`[verifyEmail] Email verified successfully for ${email}`);
 
         return res.status(200).json({
             message: "email verified successfully",
@@ -215,7 +240,7 @@ export const verifyEmail = async (req, res) => {
         });
 
     } catch (error) {
-        console.log("error in verifyEmail : ", error);
+        console.error("[verifyEmail] Error:", error.message);
         return res.status(500).json({
             message: "error in verify email",
             success: false,
