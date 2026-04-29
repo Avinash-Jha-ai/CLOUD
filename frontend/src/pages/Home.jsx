@@ -67,7 +67,7 @@ const Home = () => {
       <section style={{ padding: '6rem 2rem', background: 'var(--bg-secondary)', width: '100%', display: 'flex', justifyContent: 'center' }}>
         <div style={{ maxWidth: '1200px', width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <h2 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Why Choose ReduxCloud?</h2>
+            <h2 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Why Choose CLOUDAVI?</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>Built for developers and professionals who need uncompromising speed and security.</p>
           </div>
           
@@ -96,7 +96,7 @@ const Home = () => {
           <div style={{ flex: '1 1 400px' }}>
             <h2 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Developer First</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-              Integrate ReduxCloud into your apps in minutes. Our comprehensive REST API and SDKs make it incredibly easy to manage files programmatically.
+              Integrate CLOUDAVI into your apps in minutes. Our comprehensive REST API and SDKs make it incredibly easy to manage files programmatically.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-primary)' }}><Code color="var(--accent-red)" /> <span>REST API & GraphQL Support</span></div>
@@ -112,7 +112,7 @@ const Home = () => {
             </div>
             <pre style={{ margin: 0 }}>
               <code>
-<span style={{ color: '#569cd6' }}>import</span> {'{'} CloudClient {'}'} <span style={{ color: '#569cd6' }}>from</span> <span style={{ color: '#ce9178' }}>'@reduxcloud/sdk'</span>;{'\n\n'}
+<span style={{ color: '#569cd6' }}>import</span> {'{'} CloudClient {'}'} <span style={{ color: '#569cd6' }}>from</span> <span style={{ color: '#ce9178' }}>'@cloudavi/sdk'</span>;{'\n\n'}
 <span style={{ color: '#569cd6' }}>const</span> client = <span style={{ color: '#569cd6' }}>new</span> CloudClient(<span style={{ color: '#ce9178' }}>'API_KEY'</span>);{'\n\n'}
 <span style={{ color: '#6a9955' }}>// Upload a file easily</span>{'\n'}
 <span style={{ color: '#569cd6' }}>await</span> client.files.upload({'\n'}
@@ -146,7 +146,7 @@ const Home = () => {
 
       {/* Footer */}
       <footer style={{ padding: '4rem 2rem', width: '100%', textAlign: 'center', borderTop: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-        <p>© {new Date().getFullYear()} ReduxCloud. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} CLOUDAVI. All rights reserved.</p>
       </footer>
     </div>
   );

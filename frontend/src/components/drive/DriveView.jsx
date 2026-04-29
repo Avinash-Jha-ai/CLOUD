@@ -555,7 +555,7 @@ const DriveView = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>
           <button onClick={() => handleBreadcrumbClick(-1)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontWeight: '800' }}>
-            My Cloud
+            CLOUDAVI
           </button>
           {path.map((folder, index) => (
             <React.Fragment key={folder._id}>
@@ -660,7 +660,7 @@ const DriveView = () => {
                 </div>
                 <div style={{ flex: 1, textAlign: 'left' }}>
                   <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{folder.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>in My Cloud</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>in CLOUDAVI</div>
                 </div>
                 <button 
                   className="delete-bar-overlay"

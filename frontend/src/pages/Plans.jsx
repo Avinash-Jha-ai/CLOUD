@@ -70,7 +70,7 @@ const Plans = () => {
         key: key,
         amount: order.amount,
         currency: order.currency,
-        name: "ReduxCloud",
+        name: "CLOUDAVI",
         description: `Upgrade to ${planId.toUpperCase()} Plan`,
         order_id: order.id,
         method: {

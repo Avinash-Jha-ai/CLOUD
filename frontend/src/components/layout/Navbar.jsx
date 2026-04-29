@@ -112,7 +112,7 @@ const Navbar = () => {
               animate={{ opacity: 1, y: 0 }}
               style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--accent-red)', letterSpacing: '-1px' }}
             >
-              ReduxCloud
+              CLOUDAVI
             </motion.div>
           </Link>
         </div>
@@ -276,7 +276,7 @@ const Navbar = () => {
               )}
               
               <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)', textAlign: 'center', fontSize: '1.75rem', fontWeight: '800' }}>
-                {authMode === 'login' ? 'Welcome Back' : authMode === 'register' ? 'Join ReduxCloud' : 'Verify Email'}
+                {authMode === 'login' ? 'Welcome Back' : authMode === 'register' ? 'Join CLOUDAVI' : 'Verify Email'}
               </h2>
               
               {error && <p style={{ color: 'var(--accent-red)', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>{error}</p>}
