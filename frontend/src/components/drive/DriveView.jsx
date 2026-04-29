@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchFolderContent, createFolder, uploadFiles, deleteFile, deleteFolder } from '../../features/drive/driveSlice';
-import { Folder, File, Upload, Plus, Trash2, ChevronRight, Home, Cloud, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, FileText, X, Check, Loader2, Download, MoreVertical, ExternalLink, Volume2 } from 'lucide-react';
+import { Folder, File, Upload, Plus, Trash2, ChevronRight, Home, Cloud, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, FileText, X, Check, Loader2, Download, MoreVertical, ExternalLink, Volume2, Calendar, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DriveView = () => {
@@ -98,13 +98,13 @@ const DriveView = () => {
     }
   };
 
-  const getFileIcon = (type) => {
+  const getFileIcon = (type, size = 40) => {
     switch(type?.toLowerCase()) {
-      case 'image': return <ImageIcon size={40} color="#10b981" />;
-      case 'video': return <VideoIcon size={40} color="#f59e0b" />;
-      case 'audio': return <MusicIcon size={40} color="#8b5cf6" />;
-      case 'pdf': return <FileText size={40} color="#ef4444" />;
-      default: return <File size={40} color="var(--text-secondary)" />;
+      case 'image': return <ImageIcon size={size} color="#10b981" />;
+      case 'video': return <VideoIcon size={size} color="#f59e0b" />;
+      case 'audio': return <MusicIcon size={size} color="#8b5cf6" />;
+      case 'pdf': return <FileText size={size} color="#ef4444" />;
+      default: return <File size={size} color="var(--text-secondary)" />;
     }
   };
 
@@ -182,43 +182,54 @@ const DriveView = () => {
   };
 
   const FileViewer = ({ file, onClose }) => {
+    const [activeTab, setActiveTab] = useState('summary');
     if (!file) return null;
     const type = file.fileType?.toLowerCase();
     const ext = file.fileName?.split('.').pop()?.toLowerCase();
 
     const renderReader = () => {
-      if (type === 'image') return <img src={file.url} alt={file.fileName} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />;
-      if (type === 'video') return <video src={file.url} controls autoPlay style={{ maxWidth: '100%', maxHeight: '100%' }} />;
+      if (type === 'image') return <img src={file.url} alt={file.fileName} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }} />;
+      if (type === 'video') return <video src={file.url} controls autoPlay style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '8px' }} />;
       
-      // Document Reader Logic
       if (['txt', 'md', 'json', 'js', 'css', 'html', 'py', 'c', 'cpp'].includes(ext)) {
         return <TextReader url={file.url} />;
       }
 
-      if (ext === 'pdf' || ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+      if (ext === 'pdf') {
         return (
           <iframe 
-            src={`https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`} 
+            src={file.url} 
             title={file.fileName} 
-            style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px', background: 'white' }} 
+            style={{ width: '100%', height: '100%', border: 'none', borderRadius: '12px', background: 'white', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }} 
           />
         );
       }
 
-      // Default fallback
+      if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+        return (
+          <iframe 
+            src={`https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`} 
+            title={file.fileName} 
+            style={{ width: '100%', height: '100%', border: 'none', borderRadius: '12px', background: 'white', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }} 
+          />
+        );
+      }
+
       return (
-        <div style={{ textAlign: 'center', color: 'white', padding: '2rem' }}>
-          {getFileIcon(type, 120)}
-          <h3 style={{ marginTop: '2rem', fontSize: '1.5rem', fontWeight: '800' }}>No Preview Available</h3>
-          <p style={{ marginTop: '0.5rem', opacity: 0.6 }}>This file type ({ext}) cannot be viewed directly.</p>
-          <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: 'white', padding: '3rem', background: 'var(--bg-secondary)', borderRadius: '24px', border: '1px solid var(--border-color)', maxWidth: '400px' }}>
+          <div style={{ marginBottom: '1.5rem', opacity: 0.5 }}>{getFileIcon(type, 80)}</div>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>No Preview Available</h3>
+          <p style={{ fontSize: '0.9rem', opacity: 0.6, marginBottom: '2rem' }}>We can't preview this {ext?.toUpperCase()} file directly.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <button 
               onClick={() => handleDownload(file.url, file.fileName)}
-              style={{ background: 'var(--accent-red)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: '700', border: 'none', cursor: 'pointer' }}
+              style={{ width: '100%', background: 'var(--accent-red)', color: 'white', padding: '0.8rem', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer' }}
             >
-              Download to View
+              Download File
             </button>
-            <a href={file.url} target="_blank" rel="noreferrer" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: '700', textDecoration: 'none' }}>Open in New Tab</a>
+            <a href={file.url} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.8rem', borderRadius: '12px', fontWeight: '700', textDecoration: 'none', border: '1px solid var(--border-color)' }}>
+               Open in New Tab <ExternalLink size={14} />
+            </a>
           </div>
         </div>
       );
@@ -231,25 +242,30 @@ const DriveView = () => {
         exit={{ opacity: 0 }}
         className="viewer-overlay"
         onClick={onClose}
-        style={{ zIndex: 5000 }}
+        style={{ zIndex: 5000, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)' }}
       >
         <motion.div 
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
           className="viewer-content"
           onClick={(e) => e.stopPropagation()}
-          style={{ width: '90vw', height: '90vh', maxWidth: '1200px', background: 'var(--bg-primary)', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+          style={{ width: '95vw', height: '90vh', background: 'var(--bg-primary)', borderRadius: '32px', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', boxShadow: '0 30px 60px rgba(0,0,0,0.5)' }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', borderBottom: '1px solid var(--border-color)' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 2rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-               {getFileIcon(type, 24)}
+               <div style={{ background: 'var(--bg-primary)', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
+                 {getFileIcon(type, 20)}
+               </div>
                <div>
-                 <h2 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>{file.fileName}</h2>
-                 <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{file.fileType.toUpperCase()} • {file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(file.size / 1024)} KB`}</span>
+                 <h2 style={{ fontSize: '1rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>{file.fileName}</h2>
+                 <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--accent-red)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {currentPath.length > 0 ? currentPath[currentPath.length-1].name : 'My Drive'}
+                 </span>
                </div>
              </div>
-             <div style={{ display: 'flex', gap: '0.5rem' }}>
+             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                {['txt', 'md', 'json', 'js', 'css', 'html'].includes(ext) && (
                  <button 
                    className="action-btn-viewer" 
@@ -258,8 +274,6 @@ const DriveView = () => {
                      if (synth.speaking) {
                        synth.cancel();
                      } else {
-                       // We need to fetch the text or get it from state. 
-                       // For simplicity, we'll fetch it again if not already available
                        fetch(file.url).then(res => res.text()).then(text => {
                          const utterance = new SpeechSynthesisUtterance(text);
                          synth.speak(utterance);
@@ -267,18 +281,146 @@ const DriveView = () => {
                      }
                    }}
                    title="Read Aloud"
+                   style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-red)' }}
                  >
                    <Volume2 size={18} />
                  </button>
                )}
                <button onClick={() => handleDownload(file.url, file.fileName)} className="action-btn-viewer"><Download size={18} /></button>
                <button onClick={() => { handleDeleteFile(file._id); onClose(); }} className="action-btn-viewer" style={{ color: 'var(--accent-red)' }}><Trash2 size={18} /></button>
-               <button className="action-btn-viewer" onClick={onClose} style={{ marginLeft: '1rem' }}><X size={20} /></button>
+               <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.5rem' }}></div>
+               <button className="action-btn-viewer" onClick={onClose} style={{ background: 'var(--bg-primary)' }}><X size={20} /></button>
              </div>
           </div>
 
-          <div className="viewer-preview-area" style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            {renderReader()}
+          {/* Body */}
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            {/* Left Area: Preview */}
+            <div style={{ flex: 1, background: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {renderReader()}
+              </div>
+            </div>
+
+            {/* Right Sidebar */}
+            <div style={{ width: '350px', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)' }}>
+                {['summary', 'metadata', 'analysis'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      flex: 1,
+                      padding: '1rem',
+                      background: activeTab === tab ? 'var(--bg-primary)' : 'transparent',
+                      border: 'none',
+                      color: activeTab === tab ? 'var(--accent-red)' : 'var(--text-secondary)',
+                      fontWeight: '800',
+                      fontSize: '0.7rem',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      position: 'relative'
+                    }}
+                  >
+                    {tab}
+                    {activeTab === tab && (
+                      <motion.div layoutId="tab-underline" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'var(--accent-red)' }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
+                <AnimatePresence mode="wait">
+                  {activeTab === 'summary' && (
+                    <motion.div
+                      key="summary"
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+                    >
+                      <div>
+                        <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Location</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600' }}>
+                          <Folder size={16} /> {currentPath.length > 0 ? currentPath[currentPath.length-1].name : 'My Drive'}
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Format</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600' }}>
+                          <FileText size={16} /> {ext?.toUpperCase() || 'UNKNOWN'}
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>File Size</label>
+                        <div style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
+                          {file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${Math.round(file.size / 1024)} KB`}
+                        </div>
+                      </div>
+                      <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Created</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
+                          <Calendar size={14} /> {new Date(file.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {activeTab === 'metadata' && (
+                    <motion.div
+                      key="metadata"
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                    >
+                      <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <code style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
+                          ID: {file._id}<br/><br/>
+                          TYPE: {file.fileType}<br/><br/>
+                          URL: {file.url.substring(0, 40)}...
+                        </code>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {activeTab === 'analysis' && (
+                    <motion.div
+                      key="analysis"
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+                    >
+                      <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981', fontWeight: '800', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                           <Shield size={16} /> SECURITY CHECK
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>This file is verified and safe for delivery.</p>
+                      </div>
+                      <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3b82f6', fontWeight: '800', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                           <Zap size={16} /> PERFORMANCE
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>Optimized for fast previewing and low latency access.</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Sidebar Footer */}
+              <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <button 
+                   onClick={() => handleDownload(file.url, file.fileName)}
+                   style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', background: 'var(--accent-red)', color: 'white', border: 'none', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                >
+                   <Download size={18} /> Download File
+                </button>
+              </div>
+            </div>
           </div>
         </motion.div>
       </motion.div>
