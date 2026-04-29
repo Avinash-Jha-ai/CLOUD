@@ -14,16 +14,7 @@ const app =express();
 const allowedOrigins = [config.FRONTEND_URL, "https://cloud-nine-dusky.vercel.app", "http://localhost:5173"];
 
 app.use(cors({
-    origin: function (origin, callback) {
-        const normalizedOrigin = origin ? origin.replace(/\/$/, "") : null;
-        const normalizedAllowed = allowedOrigins.map(o => o ? o.replace(/\/$/, "") : o);
-        
-        if (!origin || normalizedAllowed.indexOf(normalizedOrigin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: ["https://cloud-nine-dusky.vercel.app", "http://localhost:5173", config.FRONTEND_URL].filter(Boolean),
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
@@ -46,6 +37,14 @@ app.use("/api/search", searchRouter);
 app.use("/api/plan", planRouter);
 app.use("/api/payment", paymentRouter);
 
-
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error("Server Error:", err);
+    res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: process.env.NODE_ENV === 'production' ? null : err.message
+    });
+});
 
 export default app;
