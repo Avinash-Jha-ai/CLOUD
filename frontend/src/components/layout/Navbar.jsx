@@ -112,7 +112,7 @@ const Navbar = () => {
               animate={{ opacity: 1, y: 0 }}
               style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--accent-red)', letterSpacing: '-1px' }}
             >
-              CLOUDAVI
+               CLOUDAVI
             </motion.div>
           </Link>
         </div>
