@@ -1,10 +1,9 @@
 import userModel from "../models/user.model.js";
-import {uploadFile} from "../services/storage.service.js"
+import jwt from "jsonwebtoken"
+import {config} from "../configs/config.js"
+import { uploadFile } from "../services/storage.service.js";
 import { generateOTP } from "../utils/generateOtp.js";
-import {sendEmail} from "../services/gmail.service.js"
-import jwt from "jsonwebtoken";
-import { config } from "../configs/config.js";
-
+import { sendEmail } from "../services/email.service.js";
 
 
 const sendToken = async (res, user, message) => {
@@ -17,8 +16,8 @@ const sendToken = async (res, user, message) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: true,    
-            sameSite: "none"   
+            secure: true,     // true in production (https)
+            sameSite: "none"   // "none" for cross-origin
         });
 
         return res.status(200).json({
@@ -29,10 +28,7 @@ const sendToken = async (res, user, message) => {
                 fullname: user.fullname,
                 email: user.email,
                 avatar: user.avatar,
-                isVerified: user.isVerified,
-                storageUsed: user.storageUsed,
-                storageLimit: user.storageLimit,
-                plan: user.plan
+                isVerified: user.isVerified
             }
         });
     } catch (error) {
@@ -46,8 +42,8 @@ export const emailTemplate = (fullname, email, otp) => {
     <table align="center" width="100%" style="max-width:600px;background:#fff;border-radius:10px;overflow:hidden;">
       
       <tr>
-        <td style="background:linear-gradient(135deg,#ef4444,#991b1b);padding:20px;text-align:center;color:white;">
-          <h1>CLOUDAVI Verification</h1>
+        <td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:20px;text-align:center;color:white;">
+          <h1>Verify Your Email</h1>
         </td>
       </tr>
 
@@ -85,168 +81,84 @@ export const emailTemplate = (fullname, email, otp) => {
 };
 
 
-export const register =async (req,res)=>{
-    const {fullname,email,password} =req.body;
-    const file = req.file;
+export const register = async (req, res) => {
+  const { fullname, username, email, password } = req.body;
+  const name = fullname || username;
+  const avatar = req.file;
+
+  try {
+    // 1. Check user exists
+    const isUserAlreadyExist = await userModel.findOne({ email });
+
+    if (isUserAlreadyExist) {
+      return res.status(400).json({
+        message: "User already exists with this email",
+        success: false,
+      });
+    }
+
+    if (!name) {
+      return res.status(400).json({
+        message: "Fullname or username is required",
+        success: false,
+      });
+    }
+
+    // 2. Upload avatar (optional)
+    let avatarUrl = "";
+    if (avatar) {
+      const uploaded = await uploadFile({
+        buffer: avatar.buffer,
+        fileName: avatar.originalname,
+      });
+      avatarUrl = uploaded.url;
+    }
     
-    try{
 
-        const isAlreadyUserExist =await userModel.findOne({email});
+    // 3. Generate OTP
+    const otp = generateOTP();
 
-        if (isAlreadyUserExist) {
-            return res.status(400).json({
-                message: isAlreadyUserExist.isVerified 
-                    ? "User already exists. Please login instead." 
-                    : "User already exists but is not verified. Please verify your email.",
-                success: false
-            });
-        }
+    // 4. Create user
+    const userData = {
+      fullname: name,
+      email,
+      password,
+      otp,
+      otpExpiry: Date.now() + 5 * 60 * 1000, // 5 min
+    };
 
-        let avatarUrl ="";
-
-        if(file){
-            const result = await uploadFile(file, "CLOUD/avatar");
-            avatarUrl=result.secure_url
-        }
-
-        const user =await userModel.create({
-            fullname,
-            email,
-            password,
-            avatar: avatarUrl || "https://ik.imagekit.io/Avinash/youtube/default-avatar.png"
-        })
-
-        await sendToken(res,user,"login successfully");
-
-    }catch(error){
-        console.log("error in register : ",error);
-        return res.status(500).json({
-            message:"error in register",
-            success:false,
-            error:error
-        })
+    if (avatarUrl) {
+      userData.avatar = avatarUrl;
     }
-}
 
-export const sentotp = async (req, res) => {
-    try {
-        const user = await userModel.findById(req.user.id);
+    const user = await userModel.create(userData);
 
-        if (!user) {
-            return res.status(404).json({
-                message: "user not found",
-                success: false
-            });
-        }
 
-        const otp = generateOTP();
-        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    // 5. Send Email (✅ FIXED CALL)
+    await sendEmail(
+      email,
+      "Verify your email",
+      emailTemplate(fullname, email, otp)
+    );
 
-        // Send email FIRST — only save OTP to DB if delivery succeeds.
-        // (If we save first and email fails, user gets locked out by stale OTP in DB)
-        console.log(`[sentotp] Attempting to send OTP to ${user.email}`);
+    return res.status(200).json({
+      message: "OTP sent to email",
+      success: true,
+    });
 
-        await sendEmail(
-            user.email,
-            "Verify your account",
-            emailTemplate(user.fullname, user.email, otp)
-        );
-
-        // Email sent successfully — now persist the OTP
-        user.otp = otp;
-        user.otpExpiry = otpExpiry;
-        await user.save();
-
-        console.log(`[sentotp] OTP saved and email delivered to ${user.email}`);
-
-        return res.status(200).json({
-            message: "otp sent successfully",
-            success: true
-        });
-
-    } catch (error) {
-        console.error("[sentotp] Error:", error.message);
-        return res.status(500).json({
-            message: error.message || "Failed to send OTP. Please try again.",
-            success: false
-        });
-    }
+  } catch (error) {
+    console.log("error in register:", error);
+    return res.status(500).json({
+      message: "error in register",
+      success: false,
+      error,
+    });
+  }
 };
 
-export const verifyEmail = async (req, res) => {
-    const { email, otp } = req.body;
-
-    try {
-        const user = await userModel.findOne({ email });
-
-        if (!user) {
-            return res.status(404).json({
-                message: "user not found",
-                success: false
-            });
-        }
-
-        if (user.isVerified) {
-            return res.status(400).json({
-                message: "email already verified",
-                success: false
-            });
-        }
-
-        if (!user.otp || !user.otpExpiry) {
-            return res.status(400).json({
-                message: "No OTP found. Please request a new one.",
-                success: false
-            });
-        }
-
-        // Use getTime() to reliably compare Date object vs Number timestamp
-        const isExpired = new Date(user.otpExpiry).getTime() < Date.now();
-        const isInvalid = user.otp !== String(otp).trim();
-
-        if (isInvalid || isExpired) {
-            console.log(`[verifyEmail] OTP check failed for ${email} | invalid=${isInvalid} expired=${isExpired}`);
-            return res.status(400).json({
-                message: isExpired ? "OTP has expired. Please request a new one." : "Invalid OTP. Please try again.",
-                success: false
-            });
-        }
-
-        user.isVerified = true;
-        user.otp = null;
-        user.otpExpiry = null;
-        await user.save();
-
-        console.log(`[verifyEmail] Email verified successfully for ${email}`);
-
-        return res.status(200).json({
-            message: "email verified successfully",
-            success: true,
-            user: {
-                id: user.id,
-                fullname: user.fullname,
-                email: user.email,
-                avatar: user.avatar,
-                isVerified: user.isVerified,
-                storageUsed: user.storageUsed,
-                storageLimit: user.storageLimit,
-                plan: user.plan
-            }
-        });
-
-    } catch (error) {
-        console.error("[verifyEmail] Error:", error.message);
-        return res.status(500).json({
-            message: "error in verify email",
-            success: false,
-            error: error.message
-        });
-    }
-};
 
 export const login =async (req,res)=>{
     const {email,password}=req.body;
-
     try{
 
         const user =await userModel.findOne({email});
@@ -254,7 +166,7 @@ export const login =async (req,res)=>{
         if(!user){
             return res.status(400).json({
                 message:"user not found",
-                success:true,
+                success:false
             })
         }
 
@@ -267,7 +179,15 @@ export const login =async (req,res)=>{
             })
         }
 
+        if(user.isVerified===false){
+            return res.status(400).json({
+                message:"verify you email",
+                success:false
+            })
+        }
+
         sendToken(res,user,"login successfully");
+
     }catch(error){
         console.log("error in login : ",error);
         return res.status(500).json({
@@ -278,70 +198,66 @@ export const login =async (req,res)=>{
     }
 }
 
-export const getMe = async (req, res) => {
-    try {
-        const user = await userModel.findById(req.user.id);
-        if (!user) return res.status(401).json({ message: "User not found", success: false });
-        
-        return res.status(200).json({
-            success: true,
-            user: {
-                id: user.id,
-                fullname: user.fullname,
-                email: user.email,
-                avatar: user.avatar,
-                isVerified: user.isVerified,
-                storageUsed: user.storageUsed,
-                storageLimit: user.storageLimit,
-                plan: user.plan
-            }
-        });
-    } catch (error) {
-        return res.status(500).json({ message: "Error fetching user", success: false });
-    }
-};
+export const getMe =async (req,res)=>{
+    const user =req.user;
 
-export const logout = async (req, res) => {
-    res.cookie("token", "", {
-        httpOnly: true,
-        expires: new Date(0),
-        secure: true,
-        sameSite: "none"
+    return res.status(200).json({
+        message:"user data fetch successfully",
+        success:true,
+        user
+    })
+}
+
+export const logout =async (req,res)=>{
+    await res.clearCookie("token");
+
+    return res.status(200).json({
+        message:"user logout successfully",
+        success:true,
+    })
+}
+
+export const verifyEmail = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email already verified. Please login.", success: false });
+    }
+
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({ message: "Invalid or expired OTP", success: false });
+    }
+
+
+    if (user.otpExpiry < Date.now()) {
+      await userModel.findByIdAndDelete(user._id);
+      return res.status(400).json({ message: "OTP expired. Please register again.", success: false });
+    }
+
+    user.isVerified = true;
+    user.otp = null;
+    user.otpExpiry = null;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Email verified successfully",
+      success: true
     });
-    return res.status(200).json({ message: "Logged out successfully", success: true });
-};
 
-export const socialLogin = async (req, res) => {
-    const { email, fullname, avatar, providerId, provider } = req.body;
-    try {
-        let user = await userModel.findOne({ email });
-
-        if (!user) {
-            const userData = {
-                email,
-                fullname,
-                avatar: avatar || "https://ik.imagekit.io/Avinash/youtube/default-avatar.png",
-                isVerified: true
-            };
-            if (provider === 'google') userData.googleId = providerId;
-            if (provider === 'github') userData.githubId = providerId;
-            
-            user = await userModel.create(userData);
-        } else {
-            
-            let updated = false;
-            if (provider === 'google' && !user.googleId) { user.googleId = providerId; updated = true; }
-            if (provider === 'github' && !user.githubId) { user.githubId = providerId; updated = true; }
-            if (updated) await user.save();
-        }
-
-        await sendToken(res, user, "Login successfully");
-    } catch (error) {
-        console.log("error in socialLogin : ", error);
-        return res.status(500).json({
-            message: "error in social login",
-            success: false,
-            error: error
-        });
-    }
+  } catch (error) {
+    console.log("Verify Email Error:", error);
+    return res.status(500).json({
+      message: "Error in email verification",
+      success: false,
+      error: error.message
+    });
+  }
 };
