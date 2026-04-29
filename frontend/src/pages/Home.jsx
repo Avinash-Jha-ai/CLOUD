@@ -137,9 +137,9 @@ const Home = () => {
             variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', alignItems: 'center' }}
           >
-            <PricingCard title="Free" price="0" features={['1 GB Storage', 'Basic Support', 'Community Access']} isPopular={false} />
-            <PricingCard title="Pro" price="499" features={['10 GB Storage', 'Priority Support', 'Advanced Sharing', 'API Access']} isPopular={true} />
-            <PricingCard title="Premium" price="1499" features={['100 GB Storage', '24/7 Phone Support', 'Custom Domain', 'Team Collaboration', 'Admin Dashboard']} isPopular={false} />
+            <PricingCard title="Free" price="1" features={['1 GB Storage', 'Basic Support', 'Community Access']} isPopular={false} />
+            <PricingCard title="Pro" price="50" features={['2 GB Storage', 'Priority Support', 'Advanced Sharing', 'API Access']} isPopular={true} />
+            <PricingCard title="Premium" price="100" features={['5 GB Storage', '24/7 Phone Support', 'Custom Domain', 'Team Collaboration', 'Admin Dashboard']} isPopular={false} />
           </motion.div>
         </div>
       </section>

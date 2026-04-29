@@ -13,7 +13,7 @@ const Plans = () => {
   const plans = [
     {
       id: 'free',
-      name: 'Free (Starter)',
+      name: 'Free',
       price: '₹1',
       storage: '1 GB',
       features: ['Secure Cloud Storage', 'Basic Support', 'Community Access'],

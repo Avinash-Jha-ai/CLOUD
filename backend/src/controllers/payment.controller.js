@@ -9,8 +9,8 @@ const plans = {
     limit: 1 * 1024 * 1024 * 1024, // 1GB
   },
   pro: {
-    amount: 50 * 100,
-    limit: 2 * 1024 * 1024 * 1024,
+    amount: 50 * 100, // ₹50
+    limit: 2 * 1024 * 1024 * 1024, // 2GB
   },
   premium: {
     amount: 100 * 100, // ₹100
