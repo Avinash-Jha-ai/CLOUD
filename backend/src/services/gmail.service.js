@@ -2,11 +2,16 @@ import nodemailer from "nodemailer";
 import { config } from "../configs/config.js";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,      // STARTTLS — more reliable from cloud hosts (Render blocks port 465)
   auth: {
     user: config.EMAIL_USER,
     pass: config.EMAIL_PASS,
   },
+  tls: {
+    rejectUnauthorized: false  // avoids cert issues on some cloud environments
+  }
 });
 
 // Verify SMTP connection on startup to catch bad credentials early

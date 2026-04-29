@@ -3,24 +3,19 @@ import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../../services/firebase';
 import { API_BASE_URL } from '../../configs/api';
 
-// Retries up to 2 times — handles Render.com cold-start (can take 30-50s to wake)
-// Stays in loading state during retries; only surfaces error after all attempts fail.
+// Retries up to 2 times — handles Render.com cold-start & campus network blips.
+// No manual AbortController: the browser handles timeout naturally.
+// Stays in Redux loading state during retries; only surfaces error after all attempts fail.
 const fetchWithRetry = async (url, options = {}, retries = 2, delayMs = 2000) => {
-  const controller = new AbortController();
-  // 50s per attempt — enough for Render free-tier cold start
-  const timeout = setTimeout(() => controller.abort(), 50000);
   try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timeout);
+    const response = await fetch(url, options);
     return response;
   } catch (err) {
-    clearTimeout(timeout);
     if (retries > 0) {
       console.warn(`[fetchWithRetry] Attempt failed (${err.message}), retrying in ${delayMs}ms... (${retries} left)`);
       await new Promise(resolve => setTimeout(resolve, delayMs));
       return fetchWithRetry(url, options, retries - 1, delayMs);
     }
-    // All retries exhausted — throw a clean user-facing message
     throw new Error('Unable to reach server. Please check your connection and try again.');
   }
 };
