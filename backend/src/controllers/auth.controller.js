@@ -129,24 +129,34 @@ export const register =async (req,res)=>{
 }
 
 export const sentotp = async (req, res) => {
+  let otp;
+  let otpExpiry;
   try {
-    const user = await userModel.findById(req.user.id);
+    const user = req.user;
+    if (!user) {
+        return res.status(401).json({ message: "User context not found", success: false });
+    }
 
-    const otp = generateOTP();
-    const otpExpiry = Date.now() + 10 * 60 * 1000;
-
-    console.log(`Attempting to send OTP to ${user.email}...`);
-    await sendEmail(
-      user.email,
-      "Verify your CLOUDAVI Account",
-      emailTemplate(user.fullname, user.email, otp)
-    );
-    console.log(`OTP sent successfully to ${user.email}`);
+    otp = generateOTP();
+    otpExpiry = Date.now() + 10 * 60 * 1000;
 
     user.otp = otp;
     user.otpExpiry = otpExpiry;
-
     await user.save();
+
+    console.log(`Attempting to send OTP to ${user.email}...`);
+    try {
+        await sendEmail(
+          user.email,
+          "Verify your CLOUDAVI Account",
+          emailTemplate(user.fullname, user.email, otp)
+        );
+        console.log(`OTP sent successfully to ${user.email}`);
+    } catch (emailError) {
+        console.error("Email send failed but OTP is saved in DB:", emailError.message);
+        
+        throw emailError; 
+    }
 
     return res.status(200).json({
       message: "otp sent",
