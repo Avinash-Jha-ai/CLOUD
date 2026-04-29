@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider, githubProvider } from '../../services/firebase';
+import { auth, googleProvider } from '../../services/firebase';
 import { API_BASE_URL } from '../../configs/api';
 
 
@@ -38,27 +38,7 @@ export const loginWithGoogle = createAsyncThunk(
   }
 );
 
-export const loginWithGithub = createAsyncThunk(
-  'auth/loginWithGithub',
-  async (_, { rejectWithValue }) => {
-    try {
-      const result = await signInWithPopup(auth, githubProvider);
-      const user = result.user;
-      
-      const backendData = await callSocialLoginBackend({
-        email: user.email || `${user.uid}@github.com`,
-        fullname: user.displayName || 'Github User',
-        avatar: user.photoURL,
-        providerId: user.uid,
-        provider: 'github'
-      });
 
-      return backendData.user;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
 
 export const loginWithEmail = createAsyncThunk(
   'auth/loginWithEmail',
@@ -228,10 +208,6 @@ export const authSlice = createSlice({
       .addCase(loginWithGoogle.pending, handlePending)
       .addCase(loginWithGoogle.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
       .addCase(loginWithGoogle.rejected, handleRejected)
-      // Github Login
-      .addCase(loginWithGithub.pending, handlePending)
-      .addCase(loginWithGithub.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
-      .addCase(loginWithGithub.rejected, handleRejected)
       // Email Login
       .addCase(loginWithEmail.pending, handlePending)
       .addCase(loginWithEmail.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
