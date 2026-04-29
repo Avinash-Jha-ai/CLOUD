@@ -56,7 +56,7 @@ export const uploadFiles = createAsyncThunk(
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Upload failed');
-      return data.files;
+      return data; // Return full data { files, storageUsed }
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -73,7 +73,7 @@ export const deleteFile = createAsyncThunk(
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Delete failed');
-      return fileId;
+      return data; // Return full data { fileId, storageUsed }
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -126,14 +126,14 @@ const driveSlice = createSlice({
       .addCase(uploadFiles.pending, (state) => { state.isUploading = true; })
       .addCase(uploadFiles.fulfilled, (state, action) => {
         state.isUploading = false;
-        state.files.push(...action.payload);
+        state.files.push(...action.payload.files);
       })
       .addCase(uploadFiles.rejected, (state, action) => { state.isUploading = false; state.error = action.payload; })
       .addCase(createFolder.fulfilled, (state, action) => {
         state.folders.push(action.payload);
       })
       .addCase(deleteFile.fulfilled, (state, action) => {
-        state.files = state.files.filter(file => file._id !== action.payload);
+        state.files = state.files.filter(file => file._id !== action.payload.fileId);
       })
       .addCase(deleteFolder.fulfilled, (state, action) => {
         state.folders = state.folders.filter(folder => folder._id !== action.payload);

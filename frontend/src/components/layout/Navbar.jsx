@@ -20,6 +20,7 @@ const Navbar = () => {
   const { user, loading, error } = useSelector((state) => state.auth);
   
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const handleSocialLogin = () => {
     dispatch(loginWithGoogle());
@@ -38,50 +39,80 @@ const Navbar = () => {
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
+  const NavLinks = ({ mobile = false }) => (
+    <>
+      <Link 
+        to="/" 
+        onClick={() => setIsMobileMenuOpen(false)}
+        style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s', padding: mobile ? '1rem 0' : '0' }}
+      >
+        Home
+      </Link>
+      <a 
+        href="/#pricing" 
+        onClick={() => setIsMobileMenuOpen(false)}
+        style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s', padding: mobile ? '1rem 0' : '0' }}
+      >
+        Pricing
+      </a>
+      {user && (
+        <Link 
+          to="/dashboard"
+          onClick={() => setIsMobileMenuOpen(false)}
+          style={{ color: mobile ? 'var(--text-primary)' : 'var(--accent-red)', textDecoration: 'none', fontWeight: '700', fontSize: '0.95rem', background: mobile ? 'transparent' : 'rgba(239, 68, 68, 0.1)', padding: mobile ? '1rem 0' : '0.5rem 1rem', borderRadius: '12px' }}
+        >
+          Dashboard
+        </Link>
+      )}
+    </>
+  );
+
   return (
     <>
       <nav style={{ 
-        padding: '1rem 4rem', 
-        display: 'grid', 
-        gridTemplateColumns: '1fr auto 1fr', 
+        padding: '1rem var(--container-padding)', 
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center', 
         borderBottom: '1px solid var(--border-color)', 
         position: 'sticky', 
         top: 0, 
-        zIndex: 100,
-        background: 'var(--bg-primary)'
+        zIndex: 1000,
+        background: 'var(--bg-primary)',
+        width: '100%'
       }} className="glass-panel">
         
-        {/* Left Section */}
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-          <Link to="/" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'var(--accent-red)'} onMouseLeave={e => e.target.style.color = 'var(--text-primary)'}>Home</Link>
-          <a href="/#pricing" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'var(--accent-red)'} onMouseLeave={e => e.target.style.color = 'var(--text-primary)'}>Pricing</a>
-        </div>
-
-        {/* Center Section: Logo */}
-        <div style={{ textAlign: 'center' }}>
+        {/* Logo - Always Left on Mobile, Center on Desktop if needed but Flex is better */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button 
+            className="show-mobile"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <div style={{ width: '20px', height: '2px', background: 'var(--text-primary)' }}></div>
+              <div style={{ width: '15px', height: '2px', background: 'var(--text-primary)' }}></div>
+              <div style={{ width: '20px', height: '2px', background: 'var(--text-primary)' }}></div>
+            </div>}
+          </button>
           <Link to="/" style={{ textDecoration: 'none' }}>
             <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--accent-red)', letterSpacing: '-1px' }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--accent-red)', letterSpacing: '-1px' }}
             >
                CLOUDAVI
             </motion.div>
           </Link>
         </div>
 
-        {/* Right Section */}
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', justifyContent: 'flex-end' }}>
-          {user && (
-            <Link 
-              to="/dashboard"
-              style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '700', fontSize: '0.95rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem 1rem', borderRadius: '12px' }}
-            >
-              Dashboard
-            </Link>
-          )}
+        {/* Desktop Navigation */}
+        <div className="hide-mobile" style={{ gap: '2.5rem', alignItems: 'center' }}>
+          <NavLinks />
+        </div>
 
+        {/* Right Section: Theme & Auth */}
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button 
             onClick={() => dispatch(toggleTheme())}
             style={{ background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '12px' }}
@@ -93,16 +124,16 @@ const Navbar = () => {
             <div style={{ position: 'relative' }}>
               <motion.div 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '0.35rem 0.75rem', borderRadius: '100px', border: '1px solid var(--border-color)' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '0.35rem 0.5rem', borderRadius: '100px', border: '1px solid var(--border-color)' }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <img 
                   src={user.avatar} 
                   alt="Avatar" 
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-red)' }} 
+                  style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-red)' }} 
                 />
-                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{user.fullname?.split(' ')[0] || 'User'}</span>
+                <span className="hide-mobile" style={{ fontWeight: '700', fontSize: '0.8rem', color: 'var(--text-primary)' }}>{user.fullname?.split(' ')[0] || 'User'}</span>
               </motion.div>
 
               <AnimatePresence>
@@ -159,7 +190,7 @@ const Navbar = () => {
                           fontSize: '0.9rem' 
                         }}
                       >
-                        <Zap size={16} fill="white" /> Upgrade Storage
+                        <Zap size={16} fill="white" /> Upgrade
                       </Link>
                       <button 
                         onClick={() => { dispatch(logoutUser()); setShowProfileMenu(false); }}
@@ -192,22 +223,48 @@ const Navbar = () => {
                 background: 'var(--accent-red)', 
                 color: '#fff', 
                 border: 'none', 
-                padding: '0.6rem 1.5rem', 
+                padding: '0.6rem 1.25rem', 
                 borderRadius: '12px', 
                 cursor: 'pointer', 
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '0.5rem', 
                 fontWeight: '800',
-                fontSize: '0.9rem',
+                fontSize: '0.85rem',
                 boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
               }}
             >
-              <LogIn size={18} /> Sign In
+              <LogIn size={16} /> <span className="hide-mobile">Sign In</span>
             </button>
           )}
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            style={{
+              position: 'fixed',
+              top: '70px',
+              left: 0,
+              width: '100%',
+              background: 'var(--bg-primary)',
+              zIndex: 999,
+              padding: '2rem var(--container-padding)',
+              borderBottom: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+            }}
+          >
+            <NavLinks mobile />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showLoginModal && (

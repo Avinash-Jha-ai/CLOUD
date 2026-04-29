@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../../services/firebase';
 import { API_BASE_URL } from '../../configs/api';
+import { uploadFiles, deleteFile } from '../drive/driveSlice';
 
 // Retries up to 2 times — handles Render.com cold-start & campus network blips.
 const fetchWithRetry = async (url, options = {}, retries = 2, delayMs = 2000) => {
@@ -160,7 +161,18 @@ export const authSlice = createSlice({
       .addCase(verifyPayment.fulfilled, (state, action) => { state.loading = false; state.user = action.payload; })
       .addCase(verifyPayment.rejected, handleRejected)
       // Logout
-      .addCase(logoutUser.fulfilled, (state) => { state.user = null; });
+      .addCase(logoutUser.fulfilled, (state) => { state.user = null; })
+      // Drive Storage Updates
+      .addCase(uploadFiles.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.storageUsed = action.payload.storageUsed;
+        }
+      })
+      .addCase(deleteFile.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.storageUsed = action.payload.storageUsed;
+        }
+      });
   },
 });
 

@@ -48,6 +48,7 @@ export const uploadMultipleFiles = async (req,res)=>{
         message: "Files uploaded successfully",
         count: uploadedFiles.length,
         files: uploadedFiles,
+        storageUsed: req.user.storageUsed // Return updated storage
         });
     }catch (error) {
         console.log("upload error:", error);
@@ -69,11 +70,13 @@ export const deletefile = async (req, res) => {
             });
         }
 
+        let updatedStorageUsed = 0;
         const user = await userModel.findById(req.user.id);
         if (user) {
             user.storageUsed -= (file.size || 0);
             if (user.storageUsed < 0) user.storageUsed = 0;
             await user.save();
+            updatedStorageUsed = user.storageUsed;
         }
 
         if (file.public_id) {
@@ -93,7 +96,8 @@ export const deletefile = async (req, res) => {
         return res.status(200).json({
             message: "File deleted successfully",
             success: true,
-            fileId
+            fileId,
+            storageUsed: updatedStorageUsed // Return updated storage
         });
 
     } catch (error) {

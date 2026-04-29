@@ -6,6 +6,9 @@
   --accent-red: #dc2626;
   --accent-red-hover: #b91c1c;
   --border-color: #e5e7eb;
+  --container-padding: 4rem;
+  --section-padding: 6rem 2rem;
+  --hero-font-size: 4rem;
 }
 
 [data-theme='dark'] {
@@ -16,6 +19,30 @@
   --accent-red: #ef4444;
   --accent-red-hover: #f87171;
   --border-color: #262626;
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --container-padding: 2rem;
+    --section-padding: 4rem 1.5rem;
+    --hero-font-size: 3.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --container-padding: 1.5rem;
+    --section-padding: 3rem 1rem;
+    --hero-font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --container-padding: 1rem;
+    --section-padding: 2.5rem 1rem;
+    --hero-font-size: 2rem;
+  }
 }
 
 body {
@@ -126,6 +153,37 @@ a {
     columns: 1;
   }
 }
+
+/* New Responsive Classes */
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
+}
+
+.section {
+  padding: var(--section-padding);
+}
+
+.hide-mobile {
+  display: flex;
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  .show-mobile {
+    display: flex !important;
+  }
+}
+
+.show-mobile {
+  display: none;
+}
+
 
 .delete-bar-overlay {
   position: absolute;

@@ -122,7 +122,6 @@ const DriveView = () => {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Download failed:", error);
-      // Fallback: just open in new tab
       window.open(url, '_blank');
     }
   };
@@ -183,6 +182,17 @@ const DriveView = () => {
 
   const FileViewer = ({ file, onClose }) => {
     const [activeTab, setActiveTab] = useState('summary');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    
     if (!file) return null;
     const type = file.fileType?.toLowerCase();
     const ext = file.fileName?.split('.').pop()?.toLowerCase();
@@ -205,21 +215,11 @@ const DriveView = () => {
         );
       }
 
-      if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
-        return (
-          <iframe 
-            src={`https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`} 
-            title={file.fileName} 
-            style={{ width: '100%', height: '100%', border: 'none', borderRadius: '12px', background: 'white', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }} 
-          />
-        );
-      }
-
       return (
-        <div style={{ textAlign: 'center', color: 'white', padding: '3rem', background: 'var(--bg-secondary)', borderRadius: '24px', border: '1px solid var(--border-color)', maxWidth: '400px' }}>
-          <div style={{ marginBottom: '1.5rem', opacity: 0.5 }}>{getFileIcon(type, 80)}</div>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>No Preview Available</h3>
-          <p style={{ fontSize: '0.9rem', opacity: 0.6, marginBottom: '2rem' }}>We can't preview this {ext?.toUpperCase()} file directly.</p>
+        <div style={{ textAlign: 'center', color: 'white', padding: '2rem', background: 'var(--bg-secondary)', borderRadius: '24px', border: '1px solid var(--border-color)', maxWidth: '400px' }}>
+          <div style={{ marginBottom: '1rem', opacity: 0.5 }}>{getFileIcon(type, 60)}</div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>No Preview Available</h3>
+          <p style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '1.5rem' }}>We can't preview this {ext?.toUpperCase()} file directly.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <button 
               onClick={() => handleDownload(file.url, file.fileName)}
@@ -227,9 +227,6 @@ const DriveView = () => {
             >
               Download File
             </button>
-            <a href={file.url} target="_blank" rel="noreferrer" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', color: 'white', padding: '0.8rem', borderRadius: '12px', fontWeight: '700', textDecoration: 'none', border: '1px solid var(--border-color)' }}>
-               Open in New Tab <ExternalLink size={14} />
-            </a>
           </div>
         </div>
       );
@@ -242,7 +239,7 @@ const DriveView = () => {
         exit={{ opacity: 0 }}
         className="viewer-overlay"
         onClick={onClose}
-        style={{ zIndex: 5000, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)' }}
+        style={{ zIndex: 5000, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', padding: 0 }}
       >
         <motion.div 
           initial={{ scale: 0.95, opacity: 0 }}
@@ -250,177 +247,121 @@ const DriveView = () => {
           exit={{ scale: 0.95, opacity: 0 }}
           className="viewer-content"
           onClick={(e) => e.stopPropagation()}
-          style={{ width: '95vw', height: '90vh', background: 'var(--bg-primary)', borderRadius: '32px', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', boxShadow: '0 30px 60px rgba(0,0,0,0.5)' }}
+          style={{ width: '100%', height: '100%', background: 'var(--bg-primary)', borderRadius: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 2rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-               <div style={{ background: 'var(--bg-primary)', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
-                 {getFileIcon(type, 20)}
-               </div>
-               <div>
-                 <h2 style={{ fontSize: '1rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>{file.fileName}</h2>
-                 <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--accent-red)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {currentPath.length > 0 ? currentPath[currentPath.length-1].name : 'My Drive'}
-                 </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
+               <button onClick={onClose} className="action-btn-viewer" style={{ background: 'var(--bg-primary)' }}><X size={20} /></button>
+               <div style={{ overflow: 'hidden' }}>
+                 <h2 style={{ fontSize: '0.9rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{file.fileName}</h2>
                </div>
              </div>
-             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-               {['txt', 'md', 'json', 'js', 'css', 'html'].includes(ext) && (
-                 <button 
-                   className="action-btn-viewer" 
-                   onClick={() => {
-                     const synth = window.speechSynthesis;
-                     if (synth.speaking) {
-                       synth.cancel();
-                     } else {
-                       fetch(file.url).then(res => res.text()).then(text => {
-                         const utterance = new SpeechSynthesisUtterance(text);
-                         synth.speak(utterance);
-                       });
-                     }
-                   }}
-                   title="Read Aloud"
-                   style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-red)' }}
-                 >
-                   <Volume2 size={18} />
-                 </button>
-               )}
-               <button onClick={() => handleDownload(file.url, file.fileName)} className="action-btn-viewer"><Download size={18} /></button>
-               <button onClick={() => { handleDeleteFile(file._id); onClose(); }} className="action-btn-viewer" style={{ color: 'var(--accent-red)' }}><Trash2 size={18} /></button>
-               <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.5rem' }}></div>
-               <button className="action-btn-viewer" onClick={onClose} style={{ background: 'var(--bg-primary)' }}><X size={20} /></button>
+             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="action-btn-viewer"><MoreVertical size={18} /></button>
+               <button onClick={() => handleDownload(file.url, file.fileName)} className="action-btn-viewer hide-mobile"><Download size={18} /></button>
              </div>
           </div>
 
           {/* Body */}
-          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
             {/* Left Area: Preview */}
-            <div style={{ flex: 1, background: 'rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', overflow: 'hidden' }}>
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {renderReader()}
-              </div>
+            <div style={{ flex: 1, background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflow: 'hidden' }}>
+              {renderReader()}
             </div>
 
             {/* Right Sidebar */}
-            <div style={{ width: '350px', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)' }}>
-                {['summary', 'metadata', 'analysis'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    style={{
-                      flex: 1,
-                      padding: '1rem',
-                      background: activeTab === tab ? 'var(--bg-primary)' : 'transparent',
-                      border: 'none',
-                      color: activeTab === tab ? 'var(--accent-red)' : 'var(--text-secondary)',
-                      fontWeight: '800',
-                      fontSize: '0.7rem',
-                      textTransform: 'uppercase',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      position: 'relative'
-                    }}
-                  >
-                    {tab}
-                    {activeTab === tab && (
-                      <motion.div layoutId="tab-underline" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'var(--accent-red)' }} />
+            <AnimatePresence>
+              {isSidebarOpen && (
+                <motion.div 
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  style={{ 
+                    position: isMobile ? 'absolute' : 'relative',
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: isMobile ? '100%' : '350px', 
+                    borderLeft: '1px solid var(--border-color)', 
+                    background: 'var(--bg-secondary)', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    zIndex: 100
+                  }}
+                >
+                  <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)' }}>
+                    {['summary', 'metadata', 'analysis'].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        style={{
+                          flex: 1,
+                          padding: '1rem',
+                          background: activeTab === tab ? 'var(--bg-primary)' : 'transparent',
+                          border: 'none',
+                          color: activeTab === tab ? 'var(--accent-red)' : 'var(--text-secondary)',
+                          fontWeight: '800',
+                          fontSize: '0.7rem',
+                          textTransform: 'uppercase',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+                    {activeTab === 'summary' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Location</label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
+                            <Folder size={14} /> My Drive
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>File Size</label>
+                          <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
+                            {file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${Math.round(file.size / 1024)} KB`}
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Created</label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
+                            <Calendar size={14} /> {new Date(file.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-                <AnimatePresence mode="wait">
-                  {activeTab === 'summary' && (
-                    <motion.div
-                      key="summary"
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
-                    >
-                      <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Location</label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600' }}>
-                          <Folder size={16} /> {currentPath.length > 0 ? currentPath[currentPath.length-1].name : 'My Drive'}
-                        </div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Format</label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600' }}>
-                          <FileText size={16} /> {ext?.toUpperCase() || 'UNKNOWN'}
-                        </div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>File Size</label>
-                        <div style={{ color: 'var(--text-primary)', fontWeight: '600' }}>
-                          {file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${Math.round(file.size / 1024)} KB`}
-                        </div>
-                      </div>
-                      <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
-                      <div>
-                        <label style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Created</label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.9rem' }}>
-                          <Calendar size={14} /> {new Date(file.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {activeTab === 'metadata' && (
-                    <motion.div
-                      key="metadata"
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                    >
+                    {activeTab === 'metadata' && (
                       <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                        <code style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
+                        <code style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
                           ID: {file._id}<br/><br/>
-                          TYPE: {file.fileType}<br/><br/>
-                          URL: {file.url.substring(0, 40)}...
+                          TYPE: {file.fileType}
                         </code>
                       </div>
-                    </motion.div>
-                  )}
+                    )}
+                  </div>
 
-                  {activeTab === 'analysis' && (
-                    <motion.div
-                      key="analysis"
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+                  <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <button 
+                       onClick={() => handleDownload(file.url, file.fileName)}
+                       style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'var(--accent-red)', color: 'white', border: 'none', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     >
-                      <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981', fontWeight: '800', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-                           <Shield size={16} /> SECURITY CHECK
-                        </div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>This file is verified and safe for delivery.</p>
-                      </div>
-                      <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3b82f6', fontWeight: '800', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-                           <Zap size={16} /> PERFORMANCE
-                        </div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>Optimized for fast previewing and low latency access.</p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Sidebar Footer */}
-              <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-                <button 
-                   onClick={() => handleDownload(file.url, file.fileName)}
-                   style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', background: 'var(--accent-red)', color: 'white', border: 'none', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                >
-                   <Download size={18} /> Download File
-                </button>
-              </div>
-            </div>
+                       <Download size={18} /> Download
+                    </button>
+                    <button 
+                       onClick={() => { handleDeleteFile(file._id); onClose(); }}
+                       style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-red)', border: 'none', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                    >
+                       <Trash2 size={18} /> Delete
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       </motion.div>
@@ -434,89 +375,9 @@ const DriveView = () => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      style={{ padding: '2rem', minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', position: 'relative' }}
+      className="container section"
+      style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', position: 'relative' }}
     >
-      {/* Uploading Overlay */}
-      <AnimatePresence>
-        {isUploading && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 4000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <motion.div 
-              animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-              style={{ marginBottom: '2rem' }}
-            >
-              <Loader2 size={64} color="var(--accent-red)" />
-            </motion.div>
-            <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>Uploading your files...</h2>
-            <div style={{ width: '300px', height: '6px', background: 'var(--bg-secondary)', borderRadius: '10px', overflow: 'hidden' }}>
-              <motion.div 
-                animate={{ x: ['-100%', '100%'] }} transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                style={{ width: '100%', height: '100%', background: 'var(--accent-red)' }}
-              />
-            </div>
-            <p style={{ marginTop: '1.5rem', color: 'var(--text-secondary)' }}>Please do not close this window</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Drag & Drop Overlay */}
-      <AnimatePresence>
-        {isDragging && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(239, 68, 68, 0.1)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', border: '4px dashed var(--accent-red)', margin: '1rem', boxSizing: 'border-box', borderRadius: '24px' }}
-          >
-            <Cloud size={100} color="var(--accent-red)" style={{ marginBottom: '1.5rem' }} />
-            <h2 style={{ color: 'var(--accent-red)', fontWeight: '800', fontSize: '2rem' }}>Drop files to upload</h2>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Upload Preview Modal */}
-      <AnimatePresence>
-        {showUploadPreview && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-              className="glass-panel"
-              style={{ background: 'var(--bg-primary)', padding: '2rem', width: '100%', maxWidth: '500px', borderRadius: '20px', maxHeight: '80vh', overflowY: 'auto' }}
-            >
-              <h3 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Confirm Upload Names</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
-                {selectedFiles.map((file, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: '12px' }}>
-                    <File size={24} color="var(--text-secondary)" />
-                    <div style={{ flex: 1 }}>
-                      <input 
-                        type="text" 
-                        value={customFileNames[i]} 
-                        placeholder="Random name will be used"
-                        onChange={(e) => {
-                          const newNames = [...customFileNames];
-                          newNames[i] = e.target.value;
-                          setCustomFileNames(newNames);
-                        }}
-                        style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
-                      />
-                      <small style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>Original: {file.name}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button onClick={handleFinalUpload} style={{ flex: 1, background: 'var(--accent-red)', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Upload All</button>
-                <button onClick={() => setShowUploadPreview(false)} style={{ flex: 1, background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '0.8rem', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Quick Upload Box */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
@@ -524,7 +385,7 @@ const DriveView = () => {
         style={{ 
           background: 'var(--bg-secondary)', 
           borderRadius: '24px', 
-          padding: '2rem', 
+          padding: '2rem 1rem', 
           marginBottom: '2rem', 
           border: '2px dashed var(--border-color)',
           display: 'flex',
@@ -535,15 +396,13 @@ const DriveView = () => {
           transition: 'all 0.3s ease'
         }}
         onClick={() => document.getElementById('quick-upload-input').click()}
-        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-red)'}
-        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
       >
         <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%' }}>
           <Upload size={32} color="var(--accent-red)" />
         </div>
         <div style={{ textAlign: 'center' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0 }}>Quick Upload</h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Drag and drop files here or click to browse</p>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>Quick Upload</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Tap or drag files here</p>
         </div>
         <input 
           id="quick-upload-input"
@@ -552,122 +411,80 @@ const DriveView = () => {
       </motion.div>
 
       {/* Breadcrumbs & Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>
-          <button onClick={() => handleBreadcrumbClick(-1)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontWeight: '800' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        gap: '1.5rem', 
+        marginBottom: '2.5rem',
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.4rem', 
+          fontSize: '1.1rem', 
+          fontWeight: 'bold', 
+          overflowX: 'auto', 
+          paddingBottom: '0.5rem', 
+          whiteSpace: 'nowrap',
+          maxWidth: '100%'
+        }}>
+          <button onClick={() => handleBreadcrumbClick(-1)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.1rem', fontWeight: '800' }}>
             CLOUDAVI
           </button>
           {path.map((folder, index) => (
             <React.Fragment key={folder._id}>
-              <ChevronRight size={18} color="var(--text-secondary)" />
-              <button onClick={() => handleBreadcrumbClick(index)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.1rem' }}>
+              <ChevronRight size={14} color="var(--text-secondary)" />
+              <button onClick={() => handleBreadcrumbClick(index)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1rem' }}>
                 {folder.name}
               </button>
             </React.Fragment>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', width: 'auto' }}>
           <label 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--accent-red)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--accent-red)', color: 'white', padding: '0.75rem 1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
           >
-            <Upload size={20} /> Upload Files
+            <Upload size={18} /> <span className="hide-mobile">Upload</span>
             <input type="file" multiple onChange={onFileSelect} style={{ display: 'none' }} />
           </label>
           <button 
             onClick={() => setShowFolderInput(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '0.75rem 1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
           >
-            <Plus size={20} /> New Folder
+            <Plus size={18} /> <span className="hide-mobile">Folder</span>
           </button>
         </div>
       </div>
 
-      {/* New Folder Modal */}
-      <AnimatePresence>
-        {showFolderInput && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-              className="glass-panel"
-              style={{ background: 'var(--bg-primary)', padding: '2.5rem', width: '100%', maxWidth: '450px', borderRadius: '28px', display: 'flex', flexDirection: 'column', gap: '2rem' }}
-            >
-              <div style={{ textAlign: 'center' }}>
-                <motion.div 
-                  animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 3 }}
-                  style={{ display: 'inline-flex', padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '24px', marginBottom: '1.25rem', boxShadow: `0 10px 30px ${newFolderColor}22` }}
-                >
-                  <Folder size={64} color={newFolderColor} fill={newFolderColor} fillOpacity={0.2} />
-                </motion.div>
-                <h3 style={{ fontSize: '1.75rem', fontWeight: '800', letterSpacing: '-0.5px' }}>New Folder</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '0.5rem' }}>Organize your files with style</p>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '1px' }}>FOLDER NAME</label>
-                  <input 
-                    autoFocus type="text" placeholder="e.g. Work Documents" 
-                    value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)}
-                    style={{ width: '100%', padding: '1.1rem', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', fontSize: '1.05rem', transition: 'border-color 0.2s' }}
-                    onFocus={(e) => e.target.style.borderColor = newFolderColor}
-                    onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-secondary)', letterSpacing: '1px' }}>THEME COLOR</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                    {folderColors.map(c => (
-                      <motion.button 
-                        key={c} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => setNewFolderColor(c)}
-                        style={{ height: '42px', borderRadius: '12px', background: c, border: newFolderColor === c ? '3px solid white' : 'none', cursor: 'pointer', transition: 'all 0.2s', boxShadow: newFolderColor === c ? `0 6px 15px ${c}66` : 'none', position: 'relative' }}
-                      >
-                        {newFolderColor === c && <motion.div layoutId="check" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}><Check size={18} color="white" /></motion.div>}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <button onClick={() => setShowFolderInput(false)} style={{ flex: 1, background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '1.1rem', borderRadius: '14px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}>Cancel</button>
-                <button onClick={handleCreateFolder} style={{ flex: 1, background: 'var(--accent-red)', color: 'white', border: 'none', padding: '1.1rem', borderRadius: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 8px 25px rgba(239, 68, 68, 0.4)', transition: 'all 0.2s' }}>Create</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Folders Section */}
       {folders.length > 0 && (
-        <div style={{ marginBottom: '3rem' }}>
-          <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Folders</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+        <div style={{ marginBottom: '2.5rem' }}>
+          <h3 style={{ marginBottom: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Folders</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
             {folders.map((folder) => (
               <motion.div 
                 key={folder._id}
                 whileHover={{ y: -2 }}
                 className="folder-horizontal"
                 onDoubleClick={() => handleFolderClick(folder)}
+                onClick={() => window.innerWidth < 768 && handleFolderClick(folder)}
               >
                 <div style={{ padding: '0.5rem', background: `${folder.color}11`, borderRadius: '8px' }}>
-                  <Folder size={24} color={folder.color || "var(--accent-red)"} fill={folder.color || "var(--accent-red)"} fillOpacity={0.2} />
+                  <Folder size={20} color={folder.color || "var(--accent-red)"} fill={folder.color || "var(--accent-red)"} fillOpacity={0.2} />
                 </div>
-                <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{folder.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>in CLOUDAVI</div>
+                <div style={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
+                  <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{folder.name}</div>
                 </div>
                 <button 
                   className="delete-bar-overlay"
-                  style={{ position: 'static', opacity: 1, width: '28px', height: '28px' }}
+                  style={{ position: 'static', opacity: 1, width: '28px', height: '28px', borderRadius: '8px' }}
                   onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder._id); }}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={12} />
                 </button>
               </motion.div>
             ))}
@@ -678,7 +495,7 @@ const DriveView = () => {
       {/* Files Section (Masonry) */}
       {files.length > 0 && (
         <div style={{ marginBottom: '3rem' }}>
-          <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Files</h3>
+          <h3 style={{ marginBottom: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>Files</h3>
           <div className="masonry-grid">
             {files.map((file) => (
               <motion.div 
@@ -690,7 +507,7 @@ const DriveView = () => {
                 onClick={() => setSelectedFile(file)}
               >
                 <div className="file-info-header">
-                  <div style={{ flex: 1, marginRight: '1rem' }}>
+                  <div style={{ flex: 1, marginRight: '1rem', overflow: 'hidden' }}>
                     <h4 style={{ fontSize: '0.8rem', fontWeight: '800', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.fileName}</h4>
                     <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>{file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(file.size / 1024)} KB`}</span>
                   </div>
@@ -704,10 +521,6 @@ const DriveView = () => {
                 >
                   <Trash2 size={16} /> Delete
                 </button>
-
-                <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', zIndex: 110 }}>
-                  {file.fileType}
-                </div>
               </motion.div>
             ))}
           </div>
@@ -715,11 +528,11 @@ const DriveView = () => {
       )}
 
       {(folders.length === 0 && files.length === 0 && !isFetching) && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: '10vh', gap: '2rem' }}>
-          <Cloud size={160} color="var(--text-secondary)" style={{ opacity: 0.2 }} />
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-secondary)' }}>Nothing here yet</h2>
-          <label style={{ background: 'var(--accent-red)', color: 'white', padding: '0.75rem 2rem', borderRadius: '12px', cursor: 'pointer', fontWeight: '700' }}>
-            Select files to upload
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: '10vh', gap: '1.5rem', textAlign: 'center' }}>
+          <Cloud size={100} color="var(--text-secondary)" style={{ opacity: 0.2 }} />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-secondary)' }}>Your drive is empty</h2>
+          <label style={{ background: 'var(--accent-red)', color: 'white', padding: '0.8rem 2rem', borderRadius: '12px', cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem' }}>
+            Upload Files
             <input type="file" multiple onChange={onFileSelect} style={{ display: 'none' }} />
           </label>
         </div>
@@ -727,6 +540,92 @@ const DriveView = () => {
       <AnimatePresence>
         {selectedFile && (
           <FileViewer file={selectedFile} onClose={() => setSelectedFile(null)} />
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {showFolderInput && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              className="glass-panel"
+              style={{ background: 'var(--bg-primary)', padding: '2rem 1.5rem', width: '100%', maxWidth: '450px', borderRadius: '28px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+            >
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '800', textAlign: 'center' }}>New Folder</h3>
+              <input 
+                autoFocus type="text" placeholder="Folder Name" 
+                value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)}
+                style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none' }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+                {folderColors.map(c => (
+                  <button 
+                    key={c} onClick={() => setNewFolderColor(c)}
+                    style={{ height: '36px', borderRadius: '10px', background: c, border: newFolderColor === c ? '3px solid white' : 'none', cursor: 'pointer' }}
+                  />
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button onClick={() => setShowFolderInput(false)} style={{ flex: 1, padding: '1rem', borderRadius: '14px', background: 'var(--bg-secondary)', border: 'none', fontWeight: '700' }}>Cancel</button>
+                <button onClick={handleCreateFolder} style={{ flex: 1, padding: '1rem', borderRadius: '14px', background: 'var(--accent-red)', color: 'white', border: 'none', fontWeight: '700' }}>Create</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showUploadPreview && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              className="glass-panel"
+              style={{ background: 'var(--bg-primary)', padding: '1.5rem', width: '100%', maxWidth: '500px', borderRadius: '20px', maxHeight: '80vh', overflowY: 'auto' }}
+            >
+              <h3 style={{ marginBottom: '1.25rem', textAlign: 'center' }}>Upload Preview</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                {selectedFiles.map((file, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', background: 'var(--bg-secondary)', padding: '0.5rem', borderRadius: '10px' }}>
+                    <File size={20} color="var(--text-secondary)" />
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                      <input 
+                        type="text" 
+                        value={customFileNames[i]} 
+                        onChange={(e) => {
+                          const newNames = [...customFileNames];
+                          newNames[i] = e.target.value;
+                          setCustomFileNames(newNames);
+                        }}
+                        style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem' }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button onClick={handleFinalUpload} style={{ flex: 1, background: 'var(--accent-red)', color: 'white', border: 'none', padding: '0.8rem', borderRadius: '12px', fontWeight: 'bold' }}>Upload</button>
+                <button onClick={() => setShowUploadPreview(false)} style={{ flex: 1, background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: 'none', padding: '0.8rem', borderRadius: '12px', fontWeight: 'bold' }}>Cancel</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isUploading && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 4000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}
+          >
+            <Loader2 size={48} color="var(--accent-red)" className="animate-spin" style={{ marginBottom: '1.5rem' }} />
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Uploading...</h2>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

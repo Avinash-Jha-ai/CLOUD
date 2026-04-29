@@ -142,13 +142,17 @@ const Plans = () => {
   };
 
   return (
-    <div style={{ padding: '4rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="container section">
       <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--text-primary)' }}>Choose Your Plan</h1>
-        <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Upgrade your storage and unlock premium features today.</p>
+        <h1 style={{ fontSize: 'var(--hero-font-size)', fontWeight: '800', marginBottom: '1rem', color: 'var(--text-primary)' }}>Choose Your Plan</h1>
+        <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>Upgrade your storage and unlock premium features today.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', 
+        gap: '2rem' 
+      }}>
         {plans.map((plan) => (
           <motion.div
             key={plan.id}
