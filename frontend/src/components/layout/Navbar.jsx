@@ -1,0 +1,336 @@
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { toggleTheme } from '../../features/theme/themeSlice';
+import { loginWithGoogle, loginWithGithub, loginWithEmail, registerWithEmail, sendOtp, verifyOtp, logoutUser, clearError } from '../../features/auth/authSlice';
+import { Moon, Sun, LogIn, LogOut, Mail, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const GithubIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+    <path d="M9 18c-4.51 2-5-2-7-2"/>
+  </svg>
+);
+
+const formatBytes = (bytes) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
+const Navbar = () => {
+  const dispatch = useDispatch();
+  const themeMode = useSelector((state) => state.theme.mode);
+  const { user, loading, error, otpSent } = useSelector((state) => state.auth);
+  
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'verify'
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullname, setFullname] = useState('');
+  const [file, setFile] = useState(null);
+  const [otp, setOtp] = useState('');
+
+  useEffect(() => {
+    // If user is logged in but not verified, show verify modal
+    if (user && !user.isVerified) {
+      setShowLoginModal(true);
+      setAuthMode('verify');
+    } else if (user && user.isVerified) {
+      setShowLoginModal(false);
+    }
+  }, [user]);
+
+  const handleEmailAuth = (e) => {
+    e.preventDefault();
+    if (authMode === 'login') {
+      dispatch(loginWithEmail({ email, password }));
+    } else if (authMode === 'register') {
+      const formData = new FormData();
+      formData.append('fullname', fullname);
+      formData.append('email', email);
+      formData.append('password', password);
+      if (file) formData.append('file', file);
+      
+      dispatch(registerWithEmail(formData));
+    }
+  };
+
+  const handleVerifyOtp = (e) => {
+    e.preventDefault();
+    if (user?.email) {
+      dispatch(verifyOtp({ email: user.email, otp }));
+    }
+  };
+
+  const handleSendOtp = () => {
+    dispatch(sendOtp());
+  };
+
+  const handleSocialLogin = (provider) => {
+    if (provider === 'google') dispatch(loginWithGoogle());
+    if (provider === 'github') dispatch(loginWithGithub());
+  };
+
+  const closeAndClear = () => {
+    if (user && !user.isVerified) return; // Force verification
+    setShowLoginModal(false);
+    dispatch(clearError());
+  };
+
+  return (
+    <>
+      <nav style={{ padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', position: 'sticky', top: 0, zIndex: 100 }} className="glass-panel">
+        <Link 
+          to="/"
+          style={{ textDecoration: 'none' }}
+        >
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent-red)' }}
+          >
+            ReduxCloud
+          </motion.div>
+        </Link>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <Link to="/" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '500', fontSize: '0.9rem' }}>Home</Link>
+          <a href="/#pricing" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: '500', fontSize: '0.9rem' }}>Pricing</a>
+          {user && user.isVerified && (
+            <Link 
+              to="/dashboard"
+              style={{ color: 'var(--accent-red)', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}
+            >
+              Dashboard
+            </Link>
+          )}
+          {user && user.isVerified && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', width: '80px', gap: '2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                  <span>Usage</span>
+                  <span>{Math.round((user.storageUsed / user.storageLimit) * 100)}%</span>
+                </div>
+                <div style={{ width: '100%', height: '4px', background: 'var(--bg-secondary)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(user.storageUsed / user.storageLimit) * 100}%` }}
+                    style={{ height: '100%', background: 'var(--accent-red)', borderRadius: '2px' }}
+                  />
+                </div>
+              </div>
+              <div style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                {formatBytes(user.storageUsed)} / {formatBytes(user.storageLimit)}
+              </div>
+            </div>
+          )}
+
+          <button 
+            onClick={() => dispatch(toggleTheme())}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem' }}
+          >
+            {themeMode === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+          </button>
+          {user && user.isVerified ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <Link to="/plans" style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-red)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Upgrade</Link>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                {user.avatar && (
+                  <motion.img 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    src={user.avatar} 
+                    alt="Profile" 
+                    style={{ width: '38px', height: '38px', borderRadius: '50%', border: '2px solid var(--accent-red)', objectFit: 'cover' }} 
+                  />
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.8rem' }}>{user.fullname.split(' ')[0]}</span>
+                  <button 
+                    onClick={() => dispatch(logoutUser())}
+                    title="Logout"
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0, transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => e.target.style.color = 'var(--accent-red)'}
+                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                  >
+                    <LogOut size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button 
+              onClick={() => { setAuthMode('login'); setShowLoginModal(true); }}
+              style={{ background: 'var(--accent-red)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}
+            >
+              <LogIn size={18} /> Sign In
+            </button>
+          )}
+        </div>
+      </nav>
+
+      <AnimatePresence>
+        {showLoginModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="glass-panel"
+              style={{ background: 'var(--bg-primary)', padding: '2rem', width: '100%', maxWidth: '400px', borderRadius: '24px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}
+            >
+              {!(user && !user.isVerified) && (
+                <button 
+                  onClick={closeAndClear}
+                  style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'var(--bg-secondary)', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <X size={18} />
+                </button>
+              )}
+              
+              <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)', textAlign: 'center', fontSize: '1.75rem', fontWeight: '800' }}>
+                {authMode === 'login' ? 'Welcome Back' : authMode === 'register' ? 'Join ReduxCloud' : 'Verify Email'}
+              </h2>
+              
+              {error && <p style={{ color: 'var(--accent-red)', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>{error}</p>}
+
+              {authMode === 'verify' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <p style={{ color: 'var(--text-secondary)', textAlign: 'center', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                    We've sent a verification code to:<br/><strong style={{ color: 'var(--text-primary)' }}>{user?.email}</strong>
+                  </p>
+                  {!otpSent ? (
+                     <button onClick={handleSendOtp} disabled={loading} style={{ background: 'var(--accent-red)', color: 'white', border: 'none', padding: '1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transition: 'transform 0.2s' }} onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'} onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
+                      {loading ? 'Sending...' : 'Send Verification Code'}
+                     </button>
+                  ) : (
+                    <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                      <input 
+                        type="text" placeholder="• • • • • •" required
+                        value={otp} onChange={e => setOtp(e.target.value)}
+                        maxLength="6"
+                        style={{ padding: '1rem', borderRadius: '12px', border: '2px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', textAlign: 'center', fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '8px' }}
+                      />
+                      <button type="submit" disabled={loading} style={{ background: 'var(--accent-red)', color: '#fff', border: 'none', padding: '1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}>
+                        {loading ? 'Verifying...' : 'Verify Now'}
+                      </button>
+                    </form>
+                  )}
+                  <button onClick={() => dispatch(logoutUser())} style={{ background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer', marginTop: '0.5rem', fontSize: '0.9rem', textDecoration: 'underline' }}>
+                    Logout and try another account
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                    {authMode === 'register' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div 
+                          onClick={() => document.getElementById('avatar-input').click()}
+                          style={{ 
+                            width: '90px', 
+                            height: '90px', 
+                            borderRadius: '50%', 
+                            background: 'var(--bg-secondary)', 
+                            border: '2px dashed var(--accent-red)', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            position: 'relative',
+                            transition: 'all 0.3s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--text-primary)'}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--accent-red)'}
+                        >
+                          {file ? (
+                            <img src={URL.createObjectURL(file)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-primary)', fontWeight: 'bold' }}>+</div>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>AVATAR</span>
+                            </div>
+                          )}
+                        </div>
+                        <input 
+                          id="avatar-input"
+                          type="file" accept="image/*"
+                          onChange={e => setFile(e.target.files[0])}
+                          style={{ display: 'none' }}
+                        />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Click to upload profile picture</span>
+                      </div>
+                    )}
+                    
+                    {authMode === 'register' && (
+                      <input 
+                        type="text" placeholder="Full Name" required
+                        value={fullname} onChange={e => setFullname(e.target.value)}
+                        style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' }}
+                        onFocus={e => e.target.style.borderColor = 'var(--accent-red)'}
+                        onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+                      />
+                    )}
+                    <input 
+                      type="email" placeholder="Email Address" required
+                      value={email} onChange={e => setEmail(e.target.value)}
+                      style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={e => e.target.style.borderColor = 'var(--accent-red)'}
+                      onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+                    />
+                    <input 
+                      type="password" placeholder="Password" required minLength="6"
+                      value={password} onChange={e => setPassword(e.target.value)}
+                      style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={e => e.target.style.borderColor = 'var(--accent-red)'}
+                      onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+                    />
+                    <button type="submit" disabled={loading} style={{ background: 'var(--accent-red)', color: '#fff', border: 'none', padding: '1rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', marginTop: '0.5rem', fontSize: '1rem' }}>
+                      {loading ? 'Processing...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+                    </button>
+                  </form>
+
+                  <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                    <button type="button" onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); dispatch(clearError()); }} style={{ background: 'transparent', border: 'none', color: 'var(--accent-red)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                      {authMode === 'login' ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', margin: '1rem 0', color: 'var(--text-secondary)' }}>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+                    <span style={{ padding: '0 1rem', fontSize: '0.875rem' }}>OR CONTINUE WITH</span>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                    <button 
+                      onClick={() => handleSocialLogin('google')} type="button" disabled={loading}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
+                    >
+                      <Mail size={18} color="var(--accent-red)" /> Google
+                    </button>
+                    <button 
+                      onClick={() => handleSocialLogin('github')} type="button" disabled={loading}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
+                    >
+                      <GithubIcon /> Github
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+export default Navbar;
