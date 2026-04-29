@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchFolderContent, createFolder, uploadFiles, deleteFile, deleteFolder } from '../../features/drive/driveSlice';
-import { Folder, File, Upload, Plus, Trash2, ChevronRight, Home, Cloud, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, FileText, X, Check, Loader2, Download, MoreVertical, ExternalLink } from 'lucide-react';
+import { Folder, File, Upload, Plus, Trash2, ChevronRight, Home, Cloud, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, FileText, X, Check, Loader2, Download, MoreVertical, ExternalLink, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DriveView = () => {
@@ -191,15 +191,11 @@ const DriveView = () => {
       if (type === 'video') return <video src={file.url} controls autoPlay style={{ maxWidth: '100%', maxHeight: '100%' }} />;
       
       // Document Reader Logic
-      if (ext === 'pdf') {
-        return <iframe src={`${file.url}#toolbar=0`} title={file.fileName} style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px', background: 'white' }} />;
-      }
-      
       if (['txt', 'md', 'json', 'js', 'css', 'html', 'py', 'c', 'cpp'].includes(ext)) {
         return <TextReader url={file.url} />;
       }
 
-      if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+      if (ext === 'pdf' || ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
         return (
           <iframe 
             src={`https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`} 
@@ -254,6 +250,27 @@ const DriveView = () => {
                </div>
              </div>
              <div style={{ display: 'flex', gap: '0.5rem' }}>
+               {['txt', 'md', 'json', 'js', 'css', 'html'].includes(ext) && (
+                 <button 
+                   className="action-btn-viewer" 
+                   onClick={() => {
+                     const synth = window.speechSynthesis;
+                     if (synth.speaking) {
+                       synth.cancel();
+                     } else {
+                       // We need to fetch the text or get it from state. 
+                       // For simplicity, we'll fetch it again if not already available
+                       fetch(file.url).then(res => res.text()).then(text => {
+                         const utterance = new SpeechSynthesisUtterance(text);
+                         synth.speak(utterance);
+                       });
+                     }
+                   }}
+                   title="Read Aloud"
+                 >
+                   <Volume2 size={18} />
+                 </button>
+               )}
                <button onClick={() => handleDownload(file.url, file.fileName)} className="action-btn-viewer"><Download size={18} /></button>
                <button onClick={() => { handleDeleteFile(file._id); onClose(); }} className="action-btn-viewer" style={{ color: 'var(--accent-red)' }}><Trash2 size={18} /></button>
                <button className="action-btn-viewer" onClick={onClose} style={{ marginLeft: '1rem' }}><X size={20} /></button>
