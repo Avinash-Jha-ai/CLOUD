@@ -283,3 +283,26 @@ a {
   box-shadow: 0 10px 20px rgba(239,68,68,0.3);
   z-index: 1001;
 }
+
+.action-btn-viewer {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-viewer:hover {
+  background: var(--bg-secondary);
+  transform: scale(1.05);
+}
+
+[data-theme='dark'] .action-btn-viewer {
+  color: white;
+}

@@ -139,7 +139,7 @@ const DriveView = () => {
           />
         ) : type === 'video' ? (
           <div style={{ padding: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
-            <Video size={48} color="white" />
+            <VideoIcon size={48} color="white" />
           </div>
         ) : (
           <div style={{ padding: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -150,9 +150,83 @@ const DriveView = () => {
     );
   };
 
+  const TextReader = ({ url }) => {
+    const [content, setContent] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      fetch(url)
+        .then(res => res.text())
+        .then(text => {
+          setContent(text);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error("Failed to read text file:", err);
+          setContent("Error loading file content.");
+          setLoading(false);
+        });
+    }, [url]);
+
+    if (loading) return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white' }}>
+        <Loader2 className="animate-spin" size={48} />
+      </div>
+    );
+
+    return (
+      <div style={{ width: '100%', height: '100%', overflowY: 'auto', padding: '2rem', background: '#1e1e1e', color: '#d4d4d4', fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.6', textAlign: 'left', whiteSpace: 'pre-wrap', borderRadius: '8px' }}>
+        {content}
+      </div>
+    );
+  };
+
   const FileViewer = ({ file, onClose }) => {
     if (!file) return null;
     const type = file.fileType?.toLowerCase();
+    const ext = file.fileName?.split('.').pop()?.toLowerCase();
+
+    const renderReader = () => {
+      if (type === 'image') return <img src={file.url} alt={file.fileName} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />;
+      if (type === 'video') return <video src={file.url} controls autoPlay style={{ maxWidth: '100%', maxHeight: '100%' }} />;
+      
+      // Document Reader Logic
+      if (ext === 'pdf') {
+        return <iframe src={`${file.url}#toolbar=0`} title={file.fileName} style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px', background: 'white' }} />;
+      }
+      
+      if (['txt', 'md', 'json', 'js', 'css', 'html', 'py', 'c', 'cpp'].includes(ext)) {
+        return <TextReader url={file.url} />;
+      }
+
+      if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+        return (
+          <iframe 
+            src={`https://docs.google.com/viewer?url=${encodeURIComponent(file.url)}&embedded=true`} 
+            title={file.fileName} 
+            style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px', background: 'white' }} 
+          />
+        );
+      }
+
+      // Default fallback
+      return (
+        <div style={{ textAlign: 'center', color: 'white', padding: '2rem' }}>
+          {getFileIcon(type, 120)}
+          <h3 style={{ marginTop: '2rem', fontSize: '1.5rem', fontWeight: '800' }}>No Preview Available</h3>
+          <p style={{ marginTop: '0.5rem', opacity: 0.6 }}>This file type ({ext}) cannot be viewed directly.</p>
+          <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button 
+              onClick={() => handleDownload(file.url, file.fileName)}
+              style={{ background: 'var(--accent-red)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: '700', border: 'none', cursor: 'pointer' }}
+            >
+              Download to View
+            </button>
+            <a href={file.url} target="_blank" rel="noreferrer" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: '700', textDecoration: 'none' }}>Open in New Tab</a>
+          </div>
+        </div>
+      );
+    };
 
     return (
       <motion.div 
@@ -161,6 +235,7 @@ const DriveView = () => {
         exit={{ opacity: 0 }}
         className="viewer-overlay"
         onClick={onClose}
+        style={{ zIndex: 5000 }}
       >
         <motion.div 
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -168,48 +243,25 @@ const DriveView = () => {
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           className="viewer-content"
           onClick={(e) => e.stopPropagation()}
+          style={{ width: '90vw', height: '90vh', maxWidth: '1200px', background: 'var(--bg-primary)', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
         >
-          <button className="close-viewer-btn" onClick={onClose}>
-            <X size={24} />
-          </button>
-
-          <div className="viewer-preview-area">
-            {type === 'image' ? (
-              <img src={file.url} alt={file.fileName} />
-            ) : type === 'video' ? (
-              <video src={file.url} controls autoPlay />
-            ) : type === 'document' && file.url.endsWith('.pdf') ? (
-              <iframe src={file.url} title={file.fileName} style={{ width: '100%', height: '100%', border: 'none' }} />
-            ) : (
-              <div style={{ textAlign: 'center', color: 'white' }}>
-                {getFileIcon(type, 120)}
-                <h3 style={{ marginTop: '2rem' }}>Preview not available for this file type</h3>
-                <a href={file.url} target="_blank" rel="noreferrer" style={{ marginTop: '1rem', display: 'inline-block', color: 'var(--accent-red)', fontWeight: '700' }}>Open in New Tab</a>
-              </div>
-            )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', borderBottom: '1px solid var(--border-color)' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+               {getFileIcon(type, 24)}
+               <div>
+                 <h2 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>{file.fileName}</h2>
+                 <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{file.fileType.toUpperCase()} • {file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(file.size / 1024)} KB`}</span>
+               </div>
+             </div>
+             <div style={{ display: 'flex', gap: '0.5rem' }}>
+               <button onClick={() => handleDownload(file.url, file.fileName)} className="action-btn-viewer"><Download size={18} /></button>
+               <button onClick={() => { handleDeleteFile(file._id); onClose(); }} className="action-btn-viewer" style={{ color: 'var(--accent-red)' }}><Trash2 size={18} /></button>
+               <button className="action-btn-viewer" onClick={onClose} style={{ marginLeft: '1rem' }}><X size={20} /></button>
+             </div>
           </div>
 
-          <div className="viewer-info-bar">
-            <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.25rem' }}>{file.fileName}</h2>
-              <span style={{ fontSize: '0.9rem', opacity: 0.7 }}>
-                {file.fileType.toUpperCase()} • {file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(file.size / 1024)} KB`}
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button 
-                onClick={() => handleDownload(file.url, file.fileName)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: '700', border: 'none', color: 'white', cursor: 'pointer' }}
-              >
-                <Download size={18} /> Download
-              </button>
-              <button 
-                onClick={() => { handleDeleteFile(file._id); onClose(); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--accent-red)', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: '700', border: 'none', color: 'white', cursor: 'pointer' }}
-              >
-                <Trash2 size={18} /> Delete
-              </button>
-            </div>
+          <div className="viewer-preview-area" style={{ flex: 1, background: 'rgba(0,0,0,0.2)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {renderReader()}
           </div>
         </motion.div>
       </motion.div>
@@ -306,6 +358,40 @@ const DriveView = () => {
         )}
       </AnimatePresence>
 
+      {/* Quick Upload Box */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ 
+          background: 'var(--bg-secondary)', 
+          borderRadius: '24px', 
+          padding: '2rem', 
+          marginBottom: '2rem', 
+          border: '2px dashed var(--border-color)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+        onClick={() => document.getElementById('quick-upload-input').click()}
+        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-red)'}
+        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+      >
+        <div style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%' }}>
+          <Upload size={32} color="var(--accent-red)" />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0 }}>Quick Upload</h3>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Drag and drop files here or click to browse</p>
+        </div>
+        <input 
+          id="quick-upload-input"
+          type="file" multiple onChange={onFileSelect} style={{ display: 'none' }} 
+        />
+      </motion.div>
+
       {/* Breadcrumbs & Actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>
@@ -322,12 +408,20 @@ const DriveView = () => {
           ))}
         </div>
 
-        <button 
-          onClick={() => setShowFolderInput(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '0.75rem 1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s' }}
-        >
-          <Plus size={20} /> New Folder
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <label 
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--accent-red)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }}
+          >
+            <Upload size={20} /> Upload Files
+            <input type="file" multiple onChange={onFileSelect} style={{ display: 'none' }} />
+          </label>
+          <button 
+            onClick={() => setShowFolderInput(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '0.75rem 1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s' }}
+          >
+            <Plus size={20} /> New Folder
+          </button>
+        </div>
       </div>
 
       {/* New Folder Modal */}
