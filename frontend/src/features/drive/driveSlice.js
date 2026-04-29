@@ -97,11 +97,33 @@ export const deleteFolder = createAsyncThunk(
   }
 );
 
+export const searchDrive = createAsyncThunk(
+  'drive/searchDrive',
+  async (query, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/search?query=${query}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Search failed');
+      return data.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const initialState = {
   folders: [],
   files: [],
+  searchResults: {
+    folders: [],
+    files: [],
+  },
   currentFolder: null,
   isFetching: false,
+  isSearching: false,
   isUploading: false,
   error: null,
 };
@@ -112,6 +134,10 @@ const driveSlice = createSlice({
   reducers: {
     setCurrentFolder: (state, action) => {
       state.currentFolder = action.payload;
+    },
+    clearSearchResults: (state) => {
+      state.searchResults = { folders: [], files: [] };
+      state.isSearching = false;
     }
   },
   extraReducers: (builder) => {
@@ -137,9 +163,21 @@ const driveSlice = createSlice({
       })
       .addCase(deleteFolder.fulfilled, (state, action) => {
         state.folders = state.folders.filter(folder => folder._id !== action.payload);
+      })
+      .addCase(searchDrive.pending, (state) => {
+        state.isSearching = true;
+        state.error = null;
+      })
+      .addCase(searchDrive.fulfilled, (state, action) => {
+        state.isSearching = false;
+        state.searchResults = action.payload;
+      })
+      .addCase(searchDrive.rejected, (state, action) => {
+        state.isSearching = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { setCurrentFolder } = driveSlice.actions;
+export const { setCurrentFolder, clearSearchResults } = driveSlice.actions;
 export default driveSlice.reducer;

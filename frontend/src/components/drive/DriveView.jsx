@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchFolderContent, createFolder, uploadFiles, deleteFile, deleteFolder } from '../../features/drive/driveSlice';
-import { Folder, File, Upload, Plus, Trash2, ChevronRight, Home, Cloud, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, FileText, X, Check, Loader2, Download, MoreVertical, ExternalLink, Volume2, Calendar, Clock } from 'lucide-react';
+import { Folder, File, Upload, Plus, Trash2, ChevronRight, Home, Cloud, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, FileText, X, Check, Loader2, Download, MoreVertical, ExternalLink, Volume2, Calendar, Clock, Search } from 'lucide-react';
+import { fetchFolderContent, createFolder, uploadFiles, deleteFile, deleteFolder, searchDrive, clearSearchResults } from '../../features/drive/driveSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DriveView = () => {
   const dispatch = useDispatch();
-  const { folders, files, isFetching, isUploading, error } = useSelector((state) => state.drive);
+  const { folders, files, isFetching, isUploading, error, searchResults, isSearching } = useSelector((state) => state.drive);
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [path, setPath] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Folder Creation State
   const [newFolderName, setNewFolderName] = useState('');
@@ -30,6 +31,18 @@ const DriveView = () => {
   const handleFolderClick = (folder) => {
     setPath([...path, folder]);
     setCurrentFolderId(folder._id);
+    setSearchQuery('');
+    dispatch(clearSearchResults());
+  };
+
+  const handleSearch = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.length > 2) {
+      dispatch(searchDrive(query));
+    } else if (query.length === 0) {
+      dispatch(clearSearchResults());
+    }
   };
 
   const handleBreadcrumbClick = (index) => {
@@ -410,6 +423,112 @@ const DriveView = () => {
         />
       </motion.div>
 
+      {/* Search Bar */}
+      <div style={{ marginBottom: '2rem', position: 'relative' }}>
+        <div style={{ position: 'relative', maxWidth: '600px', margin: '0 auto' }}>
+          <Search size={20} color="var(--text-secondary)" style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)' }} />
+          <input 
+            type="text" 
+            placeholder="Search your files and folders..." 
+            value={searchQuery}
+            onChange={handleSearch}
+            style={{ 
+              width: '100%', 
+              padding: '1rem 1rem 1rem 3.5rem', 
+              borderRadius: '16px', 
+              background: 'var(--bg-secondary)', 
+              border: '1px solid var(--border-color)', 
+              color: 'var(--text-primary)', 
+              fontSize: '1rem',
+              outline: 'none',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}
+          />
+          {isSearching && (
+            <div style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)' }}>
+              <Loader2 size={20} color="var(--accent-red)" className="animate-spin" />
+            </div>
+          )}
+          {searchQuery && !isSearching && (
+            <button 
+              onClick={() => { setSearchQuery(''); dispatch(clearSearchResults()); }}
+              style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+            >
+              <X size={20} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Search Results */}
+      <AnimatePresence>
+        {searchQuery.length > 2 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            style={{ marginBottom: '3rem' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Search Results</h2>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                ({searchResults.folders.length} folders, {searchResults.files.length} files)
+              </span>
+            </div>
+
+            {searchResults.folders.length > 0 && (
+              <div style={{ marginBottom: '2rem' }}>
+                <h3 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase' }}>Matching Folders</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                  {searchResults.folders.map(folder => (
+                    <motion.div 
+                      key={folder._id}
+                      whileHover={{ scale: 1.02 }}
+                      className="folder-horizontal"
+                      onClick={() => handleFolderClick(folder)}
+                    >
+                      <Folder size={20} color={folder.color || "var(--accent-red)"} />
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{folder.name}</div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {searchResults.files.length > 0 && (
+              <div>
+                <h3 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase' }}>Matching Files</h3>
+                <div className="masonry-grid">
+                  {searchResults.files.map(file => (
+                    <motion.div 
+                      key={file._id}
+                      className="file-card"
+                      onClick={() => setSelectedFile(file)}
+                    >
+                      <div className="file-info-header">
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          <h4 style={{ fontSize: '0.8rem', fontWeight: '800', margin: 0, textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{file.fileName}</h4>
+                        </div>
+                      </div>
+                      <FilePreview file={file} />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {searchResults.folders.length === 0 && searchResults.files.length === 0 && !isSearching && (
+              <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                <Search size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
+                <p>No results found for "{searchQuery}"</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={{ display: searchQuery.length > 2 ? 'none' : 'block' }}>
+
       {/* Breadcrumbs & Actions */}
       <div style={{ 
         display: 'flex', 
@@ -537,6 +656,7 @@ const DriveView = () => {
           </label>
         </div>
       )}
+      </div>
       <AnimatePresence>
         {selectedFile && (
           <FileViewer file={selectedFile} onClose={() => setSelectedFile(null)} />
